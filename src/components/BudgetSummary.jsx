@@ -67,26 +67,26 @@ export default function BudgetSummary({
   const customSum = Object.values(customRatios).reduce((a, b) => a + b, 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Input Controls Card */}
-      <div className="card-glass" style={{ padding: '28px' }}>
+      <div className="card-glass" style={{ padding: '24px' }}>
         
         {/* Top Controls Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', alignItems: 'end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', alignItems: 'end' }}>
           
           {/* Income Amount */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              Your Net Take-Home Income ({currency})
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Take-Home Income ({currency})
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ 
                 position: 'absolute', 
-                left: '16px', 
+                left: '14px', 
                 fontWeight: 800, 
                 color: 'var(--emerald-primary)',
-                fontSize: '1.125rem' 
+                fontSize: '1.05rem' 
               }}>
                 {currDetails.symbol}
               </span>
@@ -98,12 +98,12 @@ export default function BudgetSummary({
                 onChange={(e) => setIncome(e.target.value)}
                 placeholder="0"
                 className="input-field tabular-num"
-                style={{ paddingLeft: '56px' }}
+                style={{ paddingLeft: '50px' }}
               />
             </div>
             
             {/* Presets */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
               {presets.map((val) => (
                 <button
                   key={val}
@@ -113,9 +113,9 @@ export default function BudgetSummary({
                     background: income === val.toString() ? 'var(--emerald-primary)' : 'var(--bg-surface-elevated)',
                     color: income === val.toString() ? '#fff' : 'var(--text-secondary)',
                     border: '1px solid var(--border-subtle)',
-                    padding: '4px 10px',
+                    padding: '4px 8px',
                     borderRadius: '8px',
-                    fontSize: '0.75rem',
+                    fontSize: '0.725rem',
                     fontWeight: 600,
                     cursor: 'pointer'
                   }}
@@ -128,23 +128,23 @@ export default function BudgetSummary({
 
           {/* Income Input Period */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
               Income Frequency Entered
             </label>
-            <div className="segmented-control" style={{ width: '100%', justifyContent: 'space-between' }}>
+            <div className="segmented-control" style={{ width: '100%' }}>
               <button 
                 type="button"
                 className={`segmented-btn ${period === 'paycheck' ? 'active' : ''}`}
                 onClick={() => setPeriod('paycheck')}
-                style={{ flex: 1 }}
+                style={{ flex: 1, textAlign: 'center' }}
               >
-                Per Paycheck
+                Paycheck
               </button>
               <button 
                 type="button"
                 className={`segmented-btn ${period === 'monthly' ? 'active' : ''}`}
                 onClick={() => setPeriod('monthly')}
-                style={{ flex: 1 }}
+                style={{ flex: 1, textAlign: 'center' }}
               >
                 Monthly
               </button>
@@ -152,7 +152,7 @@ export default function BudgetSummary({
                 type="button"
                 className={`segmented-btn ${period === 'annual' ? 'active' : ''}`}
                 onClick={() => setPeriod('annual')}
-                style={{ flex: 1 }}
+                style={{ flex: 1, textAlign: 'center' }}
               >
                 Annual
               </button>
@@ -161,18 +161,18 @@ export default function BudgetSummary({
 
           {/* Pay Schedule / Frequency */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              How Often Are You Paid?
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Pay Schedule
             </label>
             <select
               value={freq}
               onChange={(e) => setFreq(e.target.value)}
               className="input-field"
-              style={{ fontSize: '0.95rem', padding: '12px 16px' }}
+              style={{ fontSize: '0.875rem', padding: '10px 14px' }}
             >
               {Object.entries(PAY_FREQUENCIES).map(([key, item]) => (
                 <option key={key} value={key} style={{ background: 'var(--bg-surface)' }}>
-                  {item.label} ({item.hint})
+                  {item.label}
                 </option>
               ))}
             </select>
@@ -181,10 +181,10 @@ export default function BudgetSummary({
         </div>
 
         {/* Rule Switcher Bar */}
-        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Budgeting Rule:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', overflowX: 'auto' }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Rule:</span>
             <div className="segmented-control">
               {Object.values(BUDGET_RULES).map((r) => (
                 <button
@@ -201,14 +201,14 @@ export default function BudgetSummary({
                 className={`segmented-btn ${selectedRuleId === 'custom' ? 'active' : ''}`}
                 onClick={() => setSelectedRuleId('custom')}
               >
-                Custom Sliders
+                Custom
               </button>
             </div>
           </div>
 
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '500px' }}>
+          <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', width: '100%' }}>
             {selectedRuleId === 'custom' 
-              ? 'Adjust sliders below to create your personalized budget distribution.' 
+              ? 'Adjust sliders below to create custom ratio allocations.' 
               : currentRuleDef.description}
           </p>
 
@@ -216,20 +216,20 @@ export default function BudgetSummary({
 
         {/* Custom Sliders Panel (If custom rule selected) */}
         {selectedRuleId === 'custom' && (
-          <div style={{ marginTop: '20px', padding: '18px', background: 'var(--bg-surface-elevated)', borderRadius: '16px', border: '1px dashed var(--emerald-primary)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--emerald-primary)' }}>
-                Customize Category Ratios
+          <div style={{ marginTop: '16px', padding: '14px', background: 'var(--bg-surface-elevated)', borderRadius: '14px', border: '1px dashed var(--emerald-primary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--emerald-primary)' }}>
+                Customize Ratios
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: customSum === 100 ? 'var(--emerald-primary)' : 'var(--rose-primary)' }}>
-                Total Allocated: {customSum}% {customSum !== 100 && '(Must sum to 100%)'}
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: customSum === 100 ? 'var(--emerald-primary)' : 'var(--rose-primary)' }}>
+                Total: {customSum}% {customSum !== 100 && '(Must = 100%)'}
               </span>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
               {buckets.map((b) => (
                 <div key={b.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px' }}>
                     <span>{b.name}</span>
                     <span style={{ color: b.color }}>{customRatios[b.id] || 0}%</span>
                   </div>
@@ -250,29 +250,29 @@ export default function BudgetSummary({
 
       </div>
 
-      {/* Visual Proportion Bar */}
-      <div className="card-glass" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+      {/* Visual Proportion Bar Card */}
+      <div className="card-glass" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
             Allocation Breakdown
           </span>
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }} className="tabular-num">
-            {period === 'monthly' && `Monthly Take-Home: ${formatCurrency(monthlyBase, currency)}`}
-            {period === 'paycheck' && `Per Paycheck (${PAY_FREQUENCIES[freq]?.label}): ${formatCurrency(paycheckTotal, currency)}`}
-            {period === 'annual' && `Annual Take-Home: ${formatCurrency(annualTotal, currency)}`}
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--emerald-primary)' }} className="tabular-num">
+            {period === 'monthly' && `Monthly: ${formatCurrency(monthlyBase, currency)}`}
+            {period === 'paycheck' && `Paycheck: ${formatCurrency(paycheckTotal, currency)}`}
+            {period === 'annual' && `Annual: ${formatCurrency(annualTotal, currency)}`}
           </span>
         </div>
 
-        <div className="progress-bar-container" style={{ height: '76px', borderRadius: '16px' }}>
+        {/* Progress Bar */}
+        <div className="progress-bar-container">
           {buckets.map((b) => {
             const bucketVal = (monthlyBase * (b.pct / 100));
             const activeVal = period === 'annual' ? bucketVal * 12 : period === 'paycheck' ? (bucketVal * 12) / periodsPerYr : bucketVal;
             
-            // Short clean labels for progress bar
             const shortLabels = {
               needs: 'Needs',
               invest: 'Invest',
-              emergency: 'Emergency',
+              emergency: 'Savings',
               wants: 'Wants'
             };
 
@@ -283,7 +283,7 @@ export default function BudgetSummary({
                 style={{ 
                   flex: b.pct > 0 ? b.pct : 0.001,
                   opacity: hoveredBucket && hoveredBucket !== b.id ? 0.45 : 1,
-                  padding: '6px 4px',
+                  padding: '4px 2px',
                   justifyContent: 'center',
                   whiteSpace: 'nowrap'
                 }}
@@ -291,26 +291,25 @@ export default function BudgetSummary({
                 onMouseLeave={() => setHoveredBucket(null)}
               >
                 {b.pct > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', width: '100%', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', width: '100%', overflow: 'hidden' }}>
                     
-                    {/* Category Tag */}
-                    <span style={{ 
-                      fontSize: b.pct < 10 ? '0.625rem' : '0.725rem', 
+                    {/* Category Label */}
+                    <span className="seg-label" style={{ 
+                      fontSize: b.pct < 10 ? '0.6rem' : '0.7rem', 
                       fontWeight: 800, 
                       textTransform: 'uppercase', 
-                      letterSpacing: '0.04em', 
+                      letterSpacing: '0.03em', 
                       opacity: 0.9,
                       lineHeight: 1,
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '100%'
+                      textOverflow: 'ellipsis'
                     }}>
-                      {b.pct < 10 ? shortLabels[b.id] : b.name}
+                      {shortLabels[b.id]}
                     </span>
 
                     {/* Percentage */}
-                    <span style={{ 
-                      fontSize: b.pct < 10 ? '0.9rem' : '1.1rem', 
+                    <span className="seg-pct" style={{ 
+                      fontSize: b.pct < 10 ? '0.85rem' : '1.05rem', 
                       fontWeight: 800, 
                       lineHeight: 1 
                     }}>
@@ -318,12 +317,12 @@ export default function BudgetSummary({
                     </span>
 
                     {/* Formatted Amount */}
-                    <span style={{ 
-                      fontSize: b.pct < 10 ? '0.675rem' : '0.775rem', 
+                    <span className="seg-val tabular-num" style={{ 
+                      fontSize: b.pct < 10 ? '0.625rem' : '0.725rem', 
                       fontWeight: 700, 
                       opacity: 0.95,
                       lineHeight: 1
-                    }} className="tabular-num">
+                    }}>
                       {formatCurrency(activeVal, currency)}
                     </span>
 
@@ -334,8 +333,8 @@ export default function BudgetSummary({
           })}
         </div>
 
-        {/* Sleek Category Color Legend Bar */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '18px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+        {/* Legend */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
           {buckets.map((b) => (
             <div 
               key={b.id}
@@ -344,23 +343,20 @@ export default function BudgetSummary({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 cursor: 'pointer',
                 opacity: hoveredBucket && hoveredBucket !== b.id ? 0.45 : 1,
                 transition: 'opacity 0.2s ease'
               }}
             >
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: b.color, display: 'inline-block' }} />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.color, display: 'inline-block' }} />
+              <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {b.name} <span style={{ color: b.color }}>({b.pct}%)</span>
               </span>
             </div>
           ))}
         </div>
         
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
-          * Hover over any segment or category legend to highlight its allocations across all time cadences.
-        </p>
       </div>
 
       {/* 4 Category Breakdown Cards */}
@@ -379,61 +375,60 @@ export default function BudgetSummary({
               onMouseEnter={() => setHoveredBucket(b.id)}
               onMouseLeave={() => setHoveredBucket(null)}
               style={{ 
-                padding: '24px', 
+                padding: '20px', 
                 display: 'flex', 
                 flexDirection: 'column', 
-                gap: '16px',
+                gap: '14px',
                 borderColor: isHovered ? b.color : 'var(--border-subtle)',
-                boxShadow: isHovered ? `0 0 25px ${b.color}25` : 'var(--shadow-lg)',
-                transform: isHovered ? 'translateY(-4px)' : 'none'
+                boxShadow: isHovered ? `0 0 20px ${b.color}25` : 'var(--shadow-lg)',
+                transform: isHovered ? 'translateY(-2px)' : 'none'
               }}
             >
               
               {/* Header Badge & Name */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <div style={{ 
                   background: b.color, 
                   color: '#fff', 
-                  width: '46px', 
-                  height: '46px', 
-                  borderRadius: '14px', 
+                  width: '42px', 
+                  height: '42px', 
+                  borderRadius: '12px', 
                   display: 'grid', 
                   placeItems: 'center', 
                   fontWeight: 800, 
-                  fontSize: '1rem',
+                  fontSize: '0.95rem',
                   flexShrink: 0,
-                  boxShadow: `0 4px 12px ${b.color}40`
+                  boxShadow: `0 4px 10px ${b.color}40`
                 }}>
                   {b.pct}%
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {b.name}
                   </h3>
-                  <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.25 }}>
                     {b.desc}
                   </p>
                 </div>
               </div>
 
               {/* Table Rows for Cadences */}
-              <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 
                 {/* Per Paycheck */}
                 <div style={{ 
                   display: 'flex', 
-                  justifyConstraints: 'space-between', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  padding: '6px 10px',
-                  borderRadius: '10px',
+                  padding: '6px 8px',
+                  borderRadius: '8px',
                   background: period === 'paycheck' ? 'var(--bg-surface-elevated)' : 'transparent',
                   border: period === 'paycheck' ? `1px solid ${b.color}40` : '1px solid transparent'
                 }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: period === 'paycheck' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Per Paycheck
+                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: period === 'paycheck' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Paycheck
                   </span>
-                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'paycheck' ? '1.1rem' : '0.925rem', color: period === 'paycheck' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'paycheck' ? '1.05rem' : '0.875rem', color: period === 'paycheck' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                     {formatCurrency(pcBucketVal, currency)}
                   </span>
                 </div>
@@ -443,15 +438,15 @@ export default function BudgetSummary({
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  padding: '6px 10px',
-                  borderRadius: '10px',
+                  padding: '6px 8px',
+                  borderRadius: '8px',
                   background: period === 'monthly' ? 'var(--bg-surface-elevated)' : 'transparent',
                   border: period === 'monthly' ? `1px solid ${b.color}40` : '1px solid transparent'
                 }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: period === 'monthly' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Per Month
+                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: period === 'monthly' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Month
                   </span>
-                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'monthly' ? '1.1rem' : '0.925rem', color: period === 'monthly' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'monthly' ? '1.05rem' : '0.875rem', color: period === 'monthly' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                     {formatCurrency(mBucketVal, currency)}
                   </span>
                 </div>
@@ -461,15 +456,15 @@ export default function BudgetSummary({
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  padding: '6px 10px',
-                  borderRadius: '10px',
+                  padding: '6px 8px',
+                  borderRadius: '8px',
                   background: period === 'annual' ? 'var(--bg-surface-elevated)' : 'transparent',
                   border: period === 'annual' ? `1px solid ${b.color}40` : '1px solid transparent'
                 }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: period === 'annual' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Per Year
+                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: period === 'annual' ? b.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Year
                   </span>
-                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'annual' ? '1.1rem' : '0.925rem', color: period === 'annual' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                  <span className="tabular-num" style={{ fontWeight: 700, fontSize: period === 'annual' ? '1.05rem' : '0.875rem', color: period === 'annual' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                     {formatCurrency(yBucketVal, currency)}
                   </span>
                 </div>
@@ -482,21 +477,21 @@ export default function BudgetSummary({
       </div>
 
       {/* Summary Footer Box */}
-      <div className="card-glass" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="card-glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h4 style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-            Total Budget Allocation Summary
+          <h4 style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+            Allocation Summary
           </h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Calculated based on {PAY_FREQUENCIES[freq]?.label} income schedule in {currDetails.name} ({currency}).
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            Calculated in {currDetails.name} ({currency}).
           </p>
         </div>
 
         <div style={{ textAlign: 'right' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Total Active Income
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Active Income Total
           </span>
-          <div className="tabular-num" style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--emerald-primary)' }}>
+          <div className="tabular-num" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--emerald-primary)' }}>
             {period === 'monthly' && formatCurrency(monthlyBase, currency)}
             {period === 'paycheck' && formatCurrency(paycheckTotal, currency)}
             {period === 'annual' && formatCurrency(annualTotal, currency)}

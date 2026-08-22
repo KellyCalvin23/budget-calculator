@@ -71,6 +71,7 @@ body {
     radial-gradient(ellipse at 90% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
   background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
 }
 
 button, input, select {
@@ -124,6 +125,7 @@ button, input, select {
   border-radius: 14px;
   border: 1px solid var(--border-subtle);
   gap: 4px;
+  max-width: 100%;
 }
 
 .segmented-btn {
@@ -152,12 +154,13 @@ button, input, select {
 /* Animated Progress Bar */
 .progress-bar-container {
   display: flex;
-  height: 64px;
+  height: 72px;
   border-radius: 16px;
   overflow: hidden;
   position: relative;
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
+  width: 100%;
 }
 
 .progress-seg {
@@ -228,14 +231,89 @@ button, input, select {
   gap: 20px;
 }
 
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE OPTIMIZATIONS
+   ========================================================================== */
+
 @media (max-width: 1024px) {
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+@media (max-width: 768px) {
+  /* Scrollable Tab Controls for Phone Screens */
+  .segmented-control {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    display: flex;
+    width: 100%;
+  }
+
+  .segmented-control::-webkit-scrollbar {
+    display: none;
+  }
+
+  .segmented-btn {
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    flex-shrink: 0;
+  }
+
+  .input-field {
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+
+  .card-glass {
+    padding: 18px !important;
+    border-radius: 16px;
+  }
+}
+
 @media (max-width: 640px) {
   .grid-4 {
     grid-template-columns: 1fr;
+  }
+
+  /* Progress bar responsive scaling */
+  .progress-bar-container {
+    height: 64px;
+  }
+
+  .progress-seg span {
+    font-size: 0.65rem !important;
+  }
+
+  /* Header adjustments for phones */
+  header.card-glass {
+    padding: 14px 16px !important;
+    border-radius: 0 0 16px 16px !important;
+    margin-bottom: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Compact paddings on ultra small phones (320px - 480px) */
+  main {
+    padding: 0 12px !important;
+  }
+
+  .card-glass {
+    padding: 14px !important;
+  }
+
+  /* Hide raw names in progress bar on small phones, show percentage + amount cleanly */
+  .progress-seg .seg-label {
+    display: none;
+  }
+
+  .progress-seg .seg-pct {
+    font-size: 0.85rem !important;
+  }
+
+  .progress-seg .seg-val {
+    font-size: 0.625rem !important;
   }
 }
