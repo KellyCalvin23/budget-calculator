@@ -139,6 +139,10 @@ export default function App() {
             monthlyIncome={monthlyIncomeBase}
             currency={currency}
             activeBuckets={getActiveBuckets()}
+            selectedRuleId={selectedRuleId}
+            setSelectedRuleId={setSelectedRuleId}
+            customBuckets={customBuckets}
+            setCustomBuckets={setCustomBuckets}
           />
         )}
 
