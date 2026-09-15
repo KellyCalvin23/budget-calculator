@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, FileText, Download, Check, Loader2 } from 'lucide-react';
+import { X, FileText, Download, Check, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, PAY_FREQUENCIES, CURRENCIES } from '../utils/currency';
+import { formatMonthKey } from '../utils/months';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -12,7 +13,9 @@ export default function ExportModal({
   period, 
   freq, 
   selectedRuleId, 
-  activeBuckets 
+  activeBuckets,
+  selectedMonthKey,
+  monthlyExpensesMap
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -30,10 +33,16 @@ export default function ExportModal({
   const annualTotal = monthlyBase * 12;
   const paycheckTotal = annualTotal / periodsPerYr;
 
+  // Active month expenses
+  const monthLabel = formatMonthKey(selectedMonthKey || '2026-09');
+  const monthExpenses = (monthlyExpensesMap && monthlyExpensesMap[selectedMonthKey]) || [];
+
   // CSV Downloader
   const downloadCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Category,Percentage,Per Paycheck,Per Month,Per Year\n";
+    csvContent += `SmartBudget Financial Plan - ${monthLabel}\n`;
+    csvContent += `Currency,${currency}\n\n`;
+    csvContent += "Category,Allocation,Per Paycheck,Per Month,Per Year\n";
 
     activeBuckets.forEach((b) => {
       const mVal = monthlyBase * (b.pct / 100);
@@ -42,13 +51,21 @@ export default function ExportModal({
       csvContent += `"${b.name}",${b.pct}%,${pcVal.toFixed(2)},${mVal.toFixed(2)},${yVal.toFixed(2)}\n`;
     });
 
+    if (monthExpenses.length > 0) {
+      csvContent += `\nItemized Expenditures (${monthLabel})\n`;
+      csvContent += "Item Name,Category,Amount\n";
+      monthExpenses.forEach(item => {
+        const catObj = activeBuckets.find(b => b.id === item.categoryId) || activeBuckets[0];
+        csvContent += `"${item.name}","${catObj?.name || 'Category'}",${item.amount.toFixed(2)}\n`;
+      });
+    }
+
     csvContent += `\n"Total Income",100%,${paycheckTotal.toFixed(2)},${monthlyBase.toFixed(2)},${annualTotal.toFixed(2)}\n`;
-    csvContent += `"Currency",${currency},,,,\n`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `SmartBudget_${currency}_Breakdown.csv`);
+    link.setAttribute("download", `SmartBudget_${monthLabel.replace(/\s+/g, '_')}_${currency}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -78,7 +95,7 @@ export default function ExportModal({
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`SmartBudget_${currency}_Financial_Plan.pdf`);
+      pdf.save(`SmartBudget_${monthLabel.replace(/\s+/g, '_')}_${currency}.pdf`);
       
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3000);
@@ -107,10 +124,10 @@ export default function ExportModal({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Export Financial Plan Report
+              Export Financial Plan & Monthly Log
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Download official PDF budget sheet or export CSV data.
+              Report for <b>{monthLabel}</b> in {currDetails.name} ({currency}).
             </p>
           </div>
           <button 
@@ -137,8 +154,8 @@ export default function ExportModal({
           {/* Document Title */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #10b981', paddingBottom: '14px', marginBottom: '16px' }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#0c4637', fontWeight: 800 }}>
-                SmartBudget Financial Plan
+              <h1 style={{ margin: 0, fontSize: '1.45rem', color: '#0c4637', fontWeight: 800 }}>
+                SmartBudget Report — {monthLabel}
               </h1>
               <p style={{ margin: '4px 0 0', fontSize: '0.825rem', color: '#64748b' }}>
                 Rule: {selectedRuleId.toUpperCase()} • Pay Schedule: {PAY_FREQUENCIES[freq]?.label}
@@ -177,7 +194,10 @@ export default function ExportModal({
           </div>
 
           {/* Category Breakdown Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0c4637', marginBottom: '8px' }}>
+            Category Allocation Caps
+          </h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '20px' }}>
             <thead>
               <tr style={{ background: '#0c4637', color: '#ffffff', textAlign: 'left' }}>
                 <th style={{ padding: '8px 12px', borderRadius: '6px 0 0 6px' }}>Category</th>
@@ -205,9 +225,39 @@ export default function ExportModal({
             </tbody>
           </table>
 
+          {/* Itemized Expenditures Log for Month */}
+          {monthExpenses.length > 0 && (
+            <>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0c4637', marginBottom: '8px' }}>
+                Itemized Expenses Log ({monthLabel})
+              </h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '20px' }}>
+                <thead>
+                  <tr style={{ background: '#1e293b', color: '#ffffff', textAlign: 'left' }}>
+                    <th style={{ padding: '6px 10px', borderRadius: '6px 0 0 6px' }}>Item Name</th>
+                    <th style={{ padding: '6px 10px' }}>Category Bucket</th>
+                    <th style={{ padding: '6px 10px', borderRadius: '0 6px 6px 0' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthExpenses.map((exp, idx) => {
+                    const catObj = activeBuckets.find(b => b.id === exp.categoryId) || activeBuckets[0];
+                    return (
+                      <tr key={exp.id || idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>{exp.name}</td>
+                        <td style={{ padding: '6px 10px', color: '#64748b' }}>{catObj?.name || 'Category'}</td>
+                        <td style={{ padding: '6px 10px', fontWeight: 700 }}>{formatCurrency(exp.amount, currency)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
+
           {/* Footer note */}
           <div style={{ marginTop: '20px', paddingTop: '12px', borderTop: '1px solid #cbd5e1', fontSize: '0.725rem', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-            <span>SmartBudget Planner • Rwandan Franc (RWF) & Multi-Currency Engine</span>
+            <span>SmartBudget Planner • Report for {monthLabel}</span>
             <span>Generated on {new Date().toLocaleDateString()}</span>
           </div>
 
@@ -262,7 +312,7 @@ export default function ExportModal({
               </>
             ) : (
               <>
-                <Download size={16} /> Download PDF
+                <Download size={16} /> Download {monthLabel} PDF
               </>
             )}
           </button>

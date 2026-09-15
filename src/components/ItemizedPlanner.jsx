@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
-import { formatCurrency, CURRENCIES } from '../utils/currency';
+import { formatCurrency } from '../utils/currency';
 import { PRESET_COLORS } from '../utils/rules';
-import { Plus, Trash2, AlertCircle, CheckCircle, FolderPlus, DollarSign, Wallet, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { 
+  formatMonthKey, 
+  getPreviousMonthKey, 
+  getNextMonthKey, 
+  generateMonthOptions 
+} from '../utils/months';
+import { 
+  Plus, 
+  Trash2, 
+  AlertCircle, 
+  CheckCircle, 
+  FolderPlus, 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight, 
+  Copy, 
+  ArrowDownRight, 
+  ArrowUpRight 
+} from 'lucide-react';
 
 export default function ItemizedPlanner({ 
   monthlyIncome, 
@@ -10,25 +28,40 @@ export default function ItemizedPlanner({
   selectedRuleId, 
   setSelectedRuleId, 
   customBuckets, 
-  setCustomBuckets 
+  setCustomBuckets,
+  selectedMonthKey,
+  setSelectedMonthKey,
+  monthlyExpensesMap,
+  setMonthlyExpensesMap
 }) {
-  // Pre-populated default sample expenses
-  const initialExpenses = currency === 'RWF' ? [
-    { id: 1, name: 'House Rent (Kigali)', amount: 250000, categoryId: activeBuckets[0]?.id || 'b1' },
-    { id: 2, name: 'Groceries & Food', amount: 120000, categoryId: activeBuckets[0]?.id || 'b1' },
-    { id: 3, name: 'REG Electricity & Water', amount: 30000, categoryId: activeBuckets[0]?.id || 'b1' },
-    { id: 4, name: 'RNIT Mutual Fund / Shares', amount: 150000, categoryId: activeBuckets[1]?.id || 'b2' },
-    { id: 5, name: 'Bank Emergency Deposit', amount: 50000, categoryId: activeBuckets[2]?.id || 'b3' },
-    { id: 6, name: 'Dining Out & Entertainment', amount: 100000, categoryId: activeBuckets[3]?.id || 'b4' },
-  ] : [
-    { id: 1, name: 'Apartment Rent', amount: 1500, categoryId: activeBuckets[0]?.id || 'b1' },
-    { id: 2, name: 'Groceries & Household', amount: 600, categoryId: activeBuckets[0]?.id || 'b1' },
-    { id: 3, name: 'Index Fund Investment', amount: 750, categoryId: activeBuckets[1]?.id || 'b2' },
-    { id: 4, name: 'Emergency Savings', amount: 250, categoryId: activeBuckets[2]?.id || 'b3' },
-    { id: 5, name: 'Dining & Outings', amount: 400, categoryId: activeBuckets[3]?.id || 'b4' },
-  ];
+  // Pre-populated initial sample expenses if month is brand new
+  const getInitialDefaultExpenses = () => {
+    return currency === 'RWF' ? [
+      { id: 1, name: 'House Rent (Kigali)', amount: 250000, categoryId: activeBuckets[0]?.id || 'b1' },
+      { id: 2, name: 'Groceries & Food', amount: 120000, categoryId: activeBuckets[0]?.id || 'b1' },
+      { id: 3, name: 'REG Electricity & Water', amount: 30000, categoryId: activeBuckets[0]?.id || 'b1' },
+      { id: 4, name: 'RNIT Mutual Fund / Shares', amount: 150000, categoryId: activeBuckets[1]?.id || 'b2' },
+      { id: 5, name: 'Bank Emergency Deposit', amount: 50000, categoryId: activeBuckets[2]?.id || 'b3' },
+      { id: 6, name: 'Dining Out & Entertainment', amount: 100000, categoryId: activeBuckets[3]?.id || 'b4' },
+    ] : [
+      { id: 1, name: 'Apartment Rent', amount: 1500, categoryId: activeBuckets[0]?.id || 'b1' },
+      { id: 2, name: 'Groceries & Household', amount: 600, categoryId: activeBuckets[0]?.id || 'b1' },
+      { id: 3, name: 'Index Fund Investment', amount: 750, categoryId: activeBuckets[1]?.id || 'b2' },
+      { id: 4, name: 'Emergency Savings', amount: 250, categoryId: activeBuckets[2]?.id || 'b3' },
+      { id: 5, name: 'Dining & Outings', amount: 400, categoryId: activeBuckets[3]?.id || 'b4' },
+    ];
+  };
 
-  const [expenses, setExpenses] = useState(initialExpenses);
+  // Current active month's expenses
+  const expenses = monthlyExpensesMap[selectedMonthKey] || getInitialDefaultExpenses();
+
+  const setExpensesForActiveMonth = (newExpenses) => {
+    setMonthlyExpensesMap({
+      ...monthlyExpensesMap,
+      [selectedMonthKey]: newExpenses
+    });
+  };
+
   const [newItemName, setNewItemName] = useState('');
   const [newItemAmount, setNewItemAmount] = useState('');
   const [newItemCategory, setNewItemCategory] = useState(activeBuckets[0]?.id || '');
@@ -39,7 +72,7 @@ export default function ItemizedPlanner({
   const [newBucketPct, setNewBucketPct] = useState('10');
   const [newBucketColor, setNewBucketColor] = useState(PRESET_COLORS[0]);
 
-  // Compute category totals dynamically
+  // Compute category totals dynamically for active month
   const categoryTotals = {};
   activeBuckets.forEach(b => {
     categoryTotals[b.id] = expenses
@@ -50,13 +83,34 @@ export default function ItemizedPlanner({
   const totalSpent = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
   const totalRemaining = monthlyIncome - totalSpent;
 
+  // Month navigation handlers
+  const handlePrevMonth = () => {
+    setSelectedMonthKey(getPreviousMonthKey(selectedMonthKey));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedMonthKey(getNextMonthKey(selectedMonthKey));
+  };
+
+  // Copy items from previous month into current month
+  const handleCopyFromPrevMonth = () => {
+    const prevKey = getPreviousMonthKey(selectedMonthKey);
+    const prevExpenses = monthlyExpensesMap[prevKey] || [];
+    if (prevExpenses.length === 0) {
+      alert(`No expenses logged in ${formatMonthKey(prevKey)} to copy.`);
+      return;
+    }
+    const cloned = prevExpenses.map(item => ({ ...item, id: Date.now() + Math.random() }));
+    setExpensesForActiveMonth(cloned);
+  };
+
   // Handle adding individual item
   const handleAddExpense = (e) => {
     e.preventDefault();
     if (!newItemName.trim() || isNaN(newItemAmount) || parseFloat(newItemAmount) <= 0) return;
     
     const catId = newItemCategory || activeBuckets[0]?.id;
-    setExpenses([
+    const updated = [
       ...expenses,
       {
         id: Date.now(),
@@ -64,14 +118,16 @@ export default function ItemizedPlanner({
         amount: parseFloat(newItemAmount),
         categoryId: catId
       }
-    ]);
+    ];
+    setExpensesForActiveMonth(updated);
     setNewItemName('');
     setNewItemAmount('');
   };
 
   // Handle deleting expense item
   const handleDeleteExpense = (id) => {
-    setExpenses(expenses.filter(e => e.id !== id));
+    const updated = expenses.filter(e => e.id !== id);
+    setExpensesForActiveMonth(updated);
   };
 
   // Handle adding a brand new category bucket directly inside the tracker!
@@ -88,7 +144,6 @@ export default function ItemizedPlanner({
       desc: 'Custom Category Bucket'
     };
 
-    // If custom mode isn't active, initialize customBuckets from activeBuckets first
     let updatedList = [];
     if (selectedRuleId !== 'custom') {
       updatedList = [...activeBuckets, newBucketObj];
@@ -103,49 +158,132 @@ export default function ItemizedPlanner({
     setIsAddingBucket(false);
   };
 
+  const monthOptions = generateMonthOptions();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Top Overview & Summary Metrics Header Banner */}
-      <div className="card-glass" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Itemized Expense & Cap Tracker
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Track real-time spending vs. remaining budget allocations for every category bucket.
-            </p>
+      {/* Month Selector & Controls Bar */}
+      <div className="card-glass" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+        
+        {/* Month Navigation & Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              onClick={handlePrevMonth}
+              title="Previous Month"
+              style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', borderRadius: '10px', width: '36px', height: '36px', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={handleNextMonth}
+              title="Next Month"
+              style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', borderRadius: '10px', width: '36px', height: '36px', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface-elevated)', padding: '6px 14px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+            <Calendar size={18} color="var(--emerald-primary)" />
+            <select
+              value={selectedMonthKey}
+              onChange={(e) => setSelectedMonthKey(e.target.value)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', outline: 'none' }}
+            >
+              {monthOptions.map(opt => (
+                <option key={opt.key} value={opt.key} style={{ background: 'var(--bg-surface)' }}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Action Buttons: Copy from prev month & Add Bucket */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          
+          {/* Copy from Prev Month Button */}
+          <button
+            onClick={handleCopyFromPrevMonth}
+            title="Clone expenses from previous month"
+            style={{
+              background: 'var(--bg-surface-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-subtle)',
+              padding: '8px 14px',
+              borderRadius: '10px',
+              fontWeight: 700,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Copy size={15} color="var(--emerald-primary)" /> Copy From Prev Month
+          </button>
+
+          {/* Add Category Bucket Button */}
           <button
             onClick={() => setIsAddingBucket(!isAddingBucket)}
             style={{
               background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
               color: '#fff',
               border: 'none',
-              padding: '10px 18px',
-              borderRadius: '12px',
+              padding: '8px 16px',
+              borderRadius: '10px',
               fontWeight: 700,
-              fontSize: '0.875rem',
+              fontSize: '0.8125rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)'
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)'
             }}
           >
-            <FolderPlus size={18} /> {isAddingBucket ? 'Cancel' : '+ Add Category Bucket'}
+            <FolderPlus size={16} /> {isAddingBucket ? 'Cancel' : '+ Add Category Bucket'}
           </button>
+
         </div>
 
-        {/* 3 Metric Summary Boxes */}
+      </div>
+
+      {/* Top Overview Summary Banner for Selected Month */}
+      <div className="card-glass" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="badge badge-rwf">
+                <Calendar size={12} /> Log: {formatMonthKey(selectedMonthKey)}
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+              Itemized Expenses for {formatMonthKey(selectedMonthKey)}
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Historical tracker for individual bills & spending in {currency}.
+            </p>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Spent in {formatMonthKey(selectedMonthKey)}
+            </span>
+            <div className="tabular-num" style={{ fontSize: '1.65rem', fontWeight: 800, color: totalSpent > monthlyIncome ? 'var(--rose-primary)' : 'var(--emerald-primary)' }}>
+              {formatCurrency(totalSpent, currency)}
+            </div>
+          </div>
+        </div>
+
+        {/* 3 Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
           
-          {/* Monthly Budget Cap */}
+          {/* Monthly Income Cap */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Total Monthly Income
+              Monthly Income Cap
             </span>
             <div className="tabular-num" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
               {formatCurrency(monthlyIncome, currency)}
@@ -155,7 +293,7 @@ export default function ItemizedPlanner({
           {/* Amount Spent */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowDownRight size={14} color="var(--rose-primary)" /> Total Itemized Spent
+              <ArrowDownRight size={14} color="var(--rose-primary)" /> Amount Spent
             </span>
             <div className="tabular-num" style={{ fontSize: '1.35rem', fontWeight: 800, color: totalSpent > monthlyIncome ? 'var(--rose-primary)' : 'var(--text-primary)', marginTop: '2px' }}>
               {formatCurrency(totalSpent, currency)}
@@ -165,7 +303,7 @@ export default function ItemizedPlanner({
           {/* Amount Remaining */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} color="var(--emerald-primary)" /> Total Cash Remaining
+              <ArrowUpRight size={14} color="var(--emerald-primary)" /> Amount Remaining
             </span>
             <div className="tabular-num" style={{ fontSize: '1.35rem', fontWeight: 800, color: totalRemaining < 0 ? 'var(--rose-primary)' : 'var(--emerald-primary)', marginTop: '2px' }}>
               {formatCurrency(totalRemaining, currency)}
@@ -200,7 +338,7 @@ export default function ItemizedPlanner({
                 </label>
                 <input 
                   type="text" 
-                  placeholder="e.g. School Fees, Charity, Side Biz"
+                  placeholder="e.g. School Fees, Side Biz"
                   value={newBucketName}
                   onChange={(e) => setNewBucketName(e.target.value)}
                   className="input-field"
@@ -269,7 +407,7 @@ export default function ItemizedPlanner({
 
       </div>
 
-      {/* Target Comparison Cards Grid with SPENT vs REMAINING */}
+      {/* Target Comparison Cards Grid with SPENT vs REMAINING for active month */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(230px, 1fr))`, gap: '16px' }}>
         {activeBuckets.map((cat) => {
           const spent = categoryTotals[cat.id] || 0;
@@ -337,7 +475,7 @@ export default function ItemizedPlanner({
                 
                 {/* 1. Allocated Cap */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                  <span>Allocated Budget Cap:</span>
+                  <span>Allocated Cap:</span>
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(targetCap, currency)}</span>
                 </div>
 
@@ -366,13 +504,13 @@ export default function ItemizedPlanner({
         })}
       </div>
 
-      {/* Add New Line Item Form & Expense Table */}
+      {/* Add New Line Item Form & Expense Table for Active Month */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
         
         {/* Form */}
         <div className="card-glass" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={16} color="var(--emerald-primary)" /> Add Expense Item
+            <Plus size={16} color="var(--emerald-primary)" /> Add Item for {formatMonthKey(selectedMonthKey)}
           </h3>
 
           <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -444,66 +582,72 @@ export default function ItemizedPlanner({
                 gap: '6px'
               }}
             >
-              <Plus size={16} /> Add Expense Item
+              <Plus size={16} /> Add to {formatMonthKey(selectedMonthKey)}
             </button>
           </form>
         </div>
 
-        {/* Expense List Table */}
+        {/* Expense List Table for Active Month */}
         <div className="card-glass" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px' }}>
-            Itemized Line Expenditures ({expenses.length})
+            {formatMonthKey(selectedMonthKey)} Expenditures ({expenses.length})
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '380px', overflowY: 'auto' }}>
-            {expenses.map((exp) => {
-              const catObj = activeBuckets.find(c => c.id === exp.categoryId) || activeBuckets[0];
-              return (
-                <div 
-                  key={exp.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    background: 'var(--bg-surface-elevated)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  <div>
-                    <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                      {exp.name}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: catObj?.color || '#10b981' }} />
-                      <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-                        {catObj?.name || 'Category'}
+            {expenses.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '20px', textAlign: 'center' }}>
+                No expenses logged for {formatMonthKey(selectedMonthKey)} yet. Click "+ Add to {formatMonthKey(selectedMonthKey)}" or use "Copy From Prev Month"!
+              </p>
+            ) : (
+              expenses.map((exp) => {
+                const catObj = activeBuckets.find(c => c.id === exp.categoryId) || activeBuckets[0];
+                return (
+                  <div 
+                    key={exp.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      background: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                        {exp.name}
                       </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: catObj?.color || '#10b981' }} />
+                        <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                          {catObj?.name || 'Category'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span className="tabular-num" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                        {formatCurrency(exp.amount, currency)}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteExpense(exp.id)}
+                        title="Remove expense item"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--rose-primary)',
+                          cursor: 'pointer',
+                          padding: '4px'
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span className="tabular-num" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                      {formatCurrency(exp.amount, currency)}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteExpense(exp.id)}
-                      title="Remove expense item"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--rose-primary)',
-                        cursor: 'pointer',
-                        padding: '4px'
-                      }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 

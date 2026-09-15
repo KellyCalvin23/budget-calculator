@@ -6,6 +6,7 @@ import WealthProjection from './components/WealthProjection';
 import ExportModal from './components/ExportModal';
 import { BUDGET_RULES, INITIAL_CUSTOM_BUCKETS } from './utils/rules';
 import { PAY_FREQUENCIES, CURRENCIES, convertCurrency } from './utils/currency';
+import { getCurrentMonthKey } from './utils/months';
 
 export default function App() {
   // Theme state
@@ -42,6 +43,20 @@ export default function App() {
     return INITIAL_CUSTOM_BUCKETS;
   });
 
+  // Selected Month Key for Historical Month Tracking (e.g. "2026-09")
+  const [selectedMonthKey, setSelectedMonthKey] = useState(() => {
+    return localStorage.getItem('sb_active_month') || getCurrentMonthKey();
+  });
+
+  // Monthly Expenses Map { "2026-09": [...], "2026-08": [...] }
+  const [monthlyExpensesMap, setMonthlyExpensesMap] = useState(() => {
+    const saved = localStorage.getItem('sb_monthly_expenses_map');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {};
+  });
+
   // Export Modal state
   const [isExportOpen, setIsExportOpen] = useState(false);
 
@@ -66,6 +81,15 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('sb_custom_buckets', JSON.stringify(customBuckets));
   }, [customBuckets]);
+
+  // Sync selectedMonthKey & monthlyExpensesMap
+  useEffect(() => {
+    localStorage.setItem('sb_active_month', selectedMonthKey);
+  }, [selectedMonthKey]);
+
+  useEffect(() => {
+    localStorage.setItem('sb_monthly_expenses_map', JSON.stringify(monthlyExpensesMap));
+  }, [monthlyExpensesMap]);
 
   // Handle currency change with smart conversion
   const handleCurrencyChange = (newCurrency) => {
@@ -143,6 +167,10 @@ export default function App() {
             setSelectedRuleId={setSelectedRuleId}
             customBuckets={customBuckets}
             setCustomBuckets={setCustomBuckets}
+            selectedMonthKey={selectedMonthKey}
+            setSelectedMonthKey={setSelectedMonthKey}
+            monthlyExpensesMap={monthlyExpensesMap}
+            setMonthlyExpensesMap={setMonthlyExpensesMap}
           />
         )}
 
@@ -166,6 +194,8 @@ export default function App() {
         freq={freq}
         selectedRuleId={selectedRuleId}
         activeBuckets={getActiveBuckets()}
+        selectedMonthKey={selectedMonthKey}
+        monthlyExpensesMap={monthlyExpensesMap}
       />
 
     </div>
