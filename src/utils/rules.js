@@ -4,10 +4,10 @@ export const BUDGET_RULES = {
     name: '50/15/5/30 Rule (MoneyLetter Standard)',
     description: 'Balanced approach dividing income into Needs (50%), Long-term Investments (15%), Emergency Fund (5%), and Lifestyle/Wants (30%).',
     buckets: [
-      { id: 'needs', key: '50', name: 'Must-Haves & Needs', pct: 50, color: 'var(--c-needs)', desc: 'Rent, food, transport, bills & debt' },
-      { id: 'invest', key: '15', name: 'Retirement & Investing', pct: 15, color: 'var(--c-invest)', desc: 'Stocks, mutual funds, real estate & business' },
-      { id: 'emergency', key: '5', name: 'Emergency Savings', pct: 5, color: 'var(--c-emergency)', desc: 'Rainy-day liquid bank cushion' },
-      { id: 'wants', key: '30', name: 'Wants & Lifestyle', pct: 30, color: 'var(--c-wants)', desc: 'Dining out, entertainment, travel & hobbies' }
+      { id: 'needs', name: 'Must-Haves & Needs', pct: 50, color: '#10b981', desc: 'Rent, food, transport, bills & debt' },
+      { id: 'invest', name: 'Retirement & Investing', pct: 15, color: '#3b82f6', desc: 'Stocks, mutual funds, real estate & business' },
+      { id: 'emergency', name: 'Emergency Savings', pct: 5, color: '#f59e0b', desc: 'Rainy-day liquid bank cushion' },
+      { id: 'wants', name: 'Wants & Lifestyle', pct: 30, color: '#8b5cf6', desc: 'Dining out, entertainment, travel & hobbies' }
     ]
   },
   '50-30-20': {
@@ -15,10 +15,9 @@ export const BUDGET_RULES = {
     name: '50/30/20 Rule (Classic Financial Plan)',
     description: 'Classic framework allocating 50% to essential needs, 30% to wants, and 20% to savings/investments.',
     buckets: [
-      { id: 'needs', key: '50', name: 'Essential Needs', pct: 50, color: 'var(--c-needs)', desc: 'Housing, food, health & utilities' },
-      { id: 'wants', key: '30', name: 'Personal Wants', pct: 30, color: 'var(--c-wants)', desc: 'Shopping, entertainment & hobbies' },
-      { id: 'invest', key: '15', name: 'Wealth & Investments', pct: 15, color: 'var(--c-invest)', desc: 'Stocks, pensions & growth' },
-      { id: 'emergency', key: '5', name: 'Emergency Buffer', pct: 5, color: 'var(--c-emergency)', desc: 'Liquid bank savings' }
+      { id: 'needs', name: 'Essential Needs', pct: 50, color: '#10b981', desc: 'Housing, food, health & utilities' },
+      { id: 'wants', name: 'Personal Wants', pct: 30, color: '#8b5cf6', desc: 'Shopping, entertainment & hobbies' },
+      { id: 'savings', name: 'Savings & Investments', pct: 20, color: '#3b82f6', desc: 'Stocks, wealth, emergency fund & growth' }
     ]
   },
   '70-20-10': {
@@ -26,10 +25,27 @@ export const BUDGET_RULES = {
     name: '70/20/10 Rule (High Cost-of-Living)',
     description: 'Designed for high essential expenses: 70% to living costs, 20% to savings, and 10% to investments.',
     buckets: [
-      { id: 'needs', key: '70', name: 'Living Expenses', pct: 70, color: 'var(--c-needs)', desc: 'All mandatory bills & obligations' },
-      { id: 'invest', key: '10', name: 'Investments', pct: 10, color: 'var(--c-invest)', desc: 'Long-term investment capital' },
-      { id: 'emergency', key: '10', name: 'Emergency & Debt', pct: 10, color: 'var(--c-emergency)', desc: 'Savings & loan payoffs' },
-      { id: 'wants', key: '10', name: 'Discretionary Wants', pct: 10, color: 'var(--c-wants)', desc: 'Fun & personal items' }
+      { id: 'needs', name: 'Living Expenses', pct: 70, color: '#10b981', desc: 'All mandatory bills & obligations' },
+      { id: 'savings', name: 'Savings & Emergency', pct: 20, color: '#f59e0b', desc: 'Savings & loan payoffs' },
+      { id: 'invest', name: 'Investments & Growth', pct: 10, color: '#3b82f6', desc: 'Long-term investment capital' }
     ]
   }
 };
+
+export const INITIAL_CUSTOM_BUCKETS = [
+  { id: 'custom-1', name: 'Must-Haves & Needs', pct: 50, color: '#10b981', desc: 'Housing, bills, groceries' },
+  { id: 'custom-2', name: 'Retirement & Investing', pct: 15, color: '#3b82f6', desc: 'Stocks & growth' },
+  { id: 'custom-3', name: 'Emergency Savings', pct: 5, color: '#f59e0b', desc: 'Liquid buffer' },
+  { id: 'custom-4', name: 'Wants & Lifestyle', pct: 30, color: '#8b5cf6', desc: 'Entertainment & travel' }
+];
+
+export const PRESET_COLORS = [
+  '#10b981', // Emerald
+  '#3b82f6', // Blue
+  '#f59e0b', // Amber
+  '#8b5cf6', // Purple
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#64748b'  // Slate
+];

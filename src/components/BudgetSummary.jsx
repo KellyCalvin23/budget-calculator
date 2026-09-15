@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, PAY_FREQUENCIES, CURRENCIES } from '../utils/currency';
-import { BUDGET_RULES } from '../utils/rules';
-import { Info, HelpCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { BUDGET_RULES, PRESET_COLORS } from '../utils/rules';
+import { Plus, Trash2, Scale, RefreshCw } from 'lucide-react';
 
 export default function BudgetSummary({ 
   income, 
@@ -13,10 +13,11 @@ export default function BudgetSummary({
   setFreq, 
   selectedRuleId, 
   setSelectedRuleId,
-  customRatios,
-  setCustomRatios
+  customBuckets,
+  setCustomBuckets,
+  activeBuckets
 }) {
-  const [hoveredBucket, setHoveredBucket] = useState(null);
+  const [hoveredBucketId, setHoveredBucketId] = useState(null);
 
   // Active currency details
   const currDetails = CURRENCIES[currency] || CURRENCIES.RWF;
@@ -28,15 +29,6 @@ export default function BudgetSummary({
 
   // Active rule definition
   const currentRuleDef = BUDGET_RULES[selectedRuleId] || BUDGET_RULES['50-15-5-30'];
-
-  // Resolve percentages from rule or custom
-  const getBucketPct = (bucketId) => {
-    if (selectedRuleId === 'custom') {
-      return customRatios[bucketId] || 25;
-    }
-    const b = currentRuleDef.buckets.find(item => item.id === bucketId);
-    return b ? b.pct : 25;
-  };
 
   // Convert raw income into normalized monthly base
   const rawIncome = parseFloat(income) || 0;
@@ -52,22 +44,59 @@ export default function BudgetSummary({
   const annualTotal = monthlyBase * 12;
   const paycheckTotal = annualTotal / periodsPerYr;
 
-  // Buckets configuration
-  const buckets = [
-    { id: 'needs', key: '50', name: 'Must-Haves & Needs', color: 'var(--c-needs)', desc: 'Housing, rent, utilities, food, transport & debt payments' },
-    { id: 'invest', key: '15', name: 'Retirement & Investing', color: 'var(--c-invest)', desc: 'Stocks, mutual funds, real estate & wealth building' },
-    { id: 'emergency', key: '5', name: 'Emergency Savings', color: 'var(--c-emergency)', desc: 'Rainy-day liquid savings & safety cushion' },
-    { id: 'wants', key: '30', name: 'Wants & Lifestyle', color: 'var(--c-wants)', desc: 'Dining out, travel, entertainment & hobbies' }
-  ].map(b => ({
-    ...b,
-    pct: getBucketPct(b.id)
-  }));
+  // Custom bucket handlers
+  const handleUpdateBucketName = (id, newName) => {
+    setCustomBuckets(customBuckets.map(b => b.id === id ? { ...b, name: newName } : b));
+  };
 
-  // Total custom ratio check
-  const customSum = Object.values(customRatios).reduce((a, b) => a + b, 0);
+  const handleUpdateBucketPct = (id, newPct) => {
+    const val = Math.max(0, Math.min(100, parseInt(newPct) || 0));
+    setCustomBuckets(customBuckets.map(b => b.id === id ? { ...b, pct: val } : b));
+  };
+
+  const handleUpdateBucketColor = (id, newColor) => {
+    setCustomBuckets(customBuckets.map(b => b.id === id ? { ...b, color: newColor } : b));
+  };
+
+  const handleAddCustomBucket = () => {
+    const newId = 'custom-' + Date.now();
+    const colorIdx = customBuckets.length % PRESET_COLORS.length;
+    setCustomBuckets([
+      ...customBuckets,
+      {
+        id: newId,
+        name: `Category ${customBuckets.length + 1}`,
+        pct: 10,
+        color: PRESET_COLORS[colorIdx],
+        desc: 'Custom Category'
+      }
+    ]);
+  };
+
+  const handleDeleteCustomBucket = (id) => {
+    if (customBuckets.length <= 1) return;
+    setCustomBuckets(customBuckets.filter(b => b.id !== id));
+  };
+
+  const handleAutoBalance = () => {
+    const total = customBuckets.reduce((sum, b) => sum + b.pct, 0);
+    if (total === 0) return;
+    let accumulated = 0;
+    const balanced = customBuckets.map((b, idx) => {
+      if (idx === customBuckets.length - 1) {
+        return { ...b, pct: Math.max(0, 100 - accumulated) };
+      }
+      const newPct = Math.round((b.pct / total) * 100);
+      accumulated += newPct;
+      return { ...b, pct: newPct };
+    });
+    setCustomBuckets(balanced);
+  };
+
+  const customSum = customBuckets.reduce((sum, b) => sum + b.pct, 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Input Controls Card */}
       <div className="card-glass" style={{ padding: '24px' }}>
@@ -208,43 +237,168 @@ export default function BudgetSummary({
 
           <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', width: '100%' }}>
             {selectedRuleId === 'custom' 
-              ? 'Adjust sliders below to create custom ratio allocations.' 
+              ? 'Fully customizable categories! Rename, adjust ratios, change colors, or add/remove categories below.' 
               : currentRuleDef.description}
           </p>
 
         </div>
 
-        {/* Custom Sliders Panel (If custom rule selected) */}
+        {/* Dynamic Custom Category Builder (If custom rule selected) */}
         {selectedRuleId === 'custom' && (
-          <div style={{ marginTop: '16px', padding: '14px', background: 'var(--bg-surface-elevated)', borderRadius: '14px', border: '1px dashed var(--emerald-primary)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--emerald-primary)' }}>
-                Customize Ratios
-              </span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: customSum === 100 ? 'var(--emerald-primary)' : 'var(--rose-primary)' }}>
-                Total: {customSum}% {customSum !== 100 && '(Must = 100%)'}
-              </span>
-            </div>
+          <div style={{ marginTop: '18px', padding: '18px', background: 'var(--bg-surface-elevated)', borderRadius: '16px', border: '1px dashed var(--emerald-primary)' }}>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-              {buckets.map((b) => (
-                <div key={b.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px' }}>
-                    <span>{b.name}</span>
-                    <span style={{ color: b.color }}>{customRatios[b.id] || 0}%</span>
+            {/* Header bar with total sum and actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--emerald-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Custom Categories Manager ({customBuckets.length})
+              </span>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ 
+                  fontSize: '0.8rem', 
+                  fontWeight: 800, 
+                  padding: '4px 10px', 
+                  borderRadius: '999px',
+                  background: customSum === 100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                  color: customSum === 100 ? 'var(--emerald-primary)' : 'var(--rose-primary)',
+                  border: customSum === 100 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)'
+                }}>
+                  Total: {customSum}% {customSum !== 100 && '(Must equal 100%)'}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleAutoBalance}
+                  style={{
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-subtle)',
+                    padding: '5px 10px',
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="Scale percentages proportionally to sum to 100%"
+                >
+                  <Scale size={14} /> Auto-Balance
+                </button>
+              </div>
+            </div>
+
+            {/* List of Custom Categories */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {customBuckets.map((b) => (
+                <div 
+                  key={b.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) auto',
+                    gap: '12px',
+                    alignItems: 'center',
+                    background: 'var(--bg-surface)',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  {/* Category Name Input & Color Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    
+                    {/* Color dot picker */}
+                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '70px' }}>
+                      {PRESET_COLORS.slice(0, 4).map((c) => (
+                        <span
+                          key={c}
+                          onClick={() => handleUpdateBucketColor(b.id, c)}
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: c,
+                            cursor: 'pointer',
+                            outline: b.color === c ? '2px solid #fff' : 'none',
+                            outlineOffset: '1px'
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    <input 
+                      type="text"
+                      value={b.name}
+                      onChange={(e) => handleUpdateBucketName(b.id, e.target.value)}
+                      placeholder="Category Name"
+                      className="input-field"
+                      style={{ padding: '6px 12px', fontSize: '0.875rem', fontWeight: 700 }}
+                    />
                   </div>
-                  <input 
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={customRatios[b.id] || 0}
-                    onChange={(e) => setCustomRatios({ ...customRatios, [b.id]: parseInt(e.target.value) || 0 })}
-                    style={{ width: '100%', accentColor: b.color, cursor: 'pointer' }}
-                  />
+
+                  {/* Percentage Slider */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={b.pct}
+                      onChange={(e) => handleUpdateBucketPct(b.id, e.target.value)}
+                      style={{ flex: 1, accentColor: b.color, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: b.color, minWidth: '42px', textAlign: 'right' }}>
+                      {b.pct}%
+                    </span>
+                  </div>
+
+                  {/* Delete Button */}
+                  {customBuckets.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCustomBucket(b.id)}
+                      title="Delete category"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--rose-primary)',
+                        cursor: 'pointer',
+                        padding: '6px',
+                        display: 'grid',
+                        placeItems: 'center'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Add New Category Button */}
+            <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'flex-start' }}>
+              <button
+                type="button"
+                onClick={handleAddCustomBucket}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={16} /> Add Custom Category
+              </button>
+            </div>
+
           </div>
         )}
 
@@ -263,48 +417,42 @@ export default function BudgetSummary({
           </span>
         </div>
 
-        {/* Progress Bar */}
+        {/* Dynamic Progress Bar */}
         <div className="progress-bar-container">
-          {buckets.map((b) => {
+          {activeBuckets.map((b) => {
             const bucketVal = (monthlyBase * (b.pct / 100));
             const activeVal = period === 'annual' ? bucketVal * 12 : period === 'paycheck' ? (bucketVal * 12) / periodsPerYr : bucketVal;
-            
-            const shortLabels = {
-              needs: 'Needs',
-              invest: 'Invest',
-              emergency: 'Savings',
-              wants: 'Wants'
-            };
 
             return (
               <div 
                 key={b.id}
-                className={`progress-seg seg-${b.id}`}
+                className="progress-seg"
                 style={{ 
                   flex: b.pct > 0 ? b.pct : 0.001,
-                  opacity: hoveredBucket && hoveredBucket !== b.id ? 0.45 : 1,
+                  background: b.color,
+                  opacity: hoveredBucketId && hoveredBucketId !== b.id ? 0.45 : 1,
                   padding: '4px 2px',
                   justifyContent: 'center',
                   whiteSpace: 'nowrap'
                 }}
-                onMouseEnter={() => setHoveredBucket(b.id)}
-                onMouseLeave={() => setHoveredBucket(null)}
+                onMouseEnter={() => setHoveredBucketId(b.id)}
+                onMouseLeave={() => setHoveredBucketId(null)}
               >
                 {b.pct > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', width: '100%', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', width: '100%', overflow: 'hidden', color: '#fff' }}>
                     
                     {/* Category Label */}
                     <span className="seg-label" style={{ 
-                      fontSize: b.pct < 10 ? '0.6rem' : '0.7rem', 
+                      fontSize: b.pct < 10 ? '0.6rem' : '0.725rem', 
                       fontWeight: 800, 
                       textTransform: 'uppercase', 
                       letterSpacing: '0.03em', 
-                      opacity: 0.9,
+                      opacity: 0.95,
                       lineHeight: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>
-                      {shortLabels[b.id]}
+                      {b.name}
                     </span>
 
                     {/* Percentage */}
@@ -333,19 +481,19 @@ export default function BudgetSummary({
           })}
         </div>
 
-        {/* Legend */}
+        {/* Dynamic Legend */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
-          {buckets.map((b) => (
+          {activeBuckets.map((b) => (
             <div 
               key={b.id}
-              onMouseEnter={() => setHoveredBucket(b.id)}
-              onMouseLeave={() => setHoveredBucket(null)}
+              onMouseEnter={() => setHoveredBucketId(b.id)}
+              onMouseLeave={() => setHoveredBucketId(null)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 cursor: 'pointer',
-                opacity: hoveredBucket && hoveredBucket !== b.id ? 0.45 : 1,
+                opacity: hoveredBucketId && hoveredBucketId !== b.id ? 0.45 : 1,
                 transition: 'opacity 0.2s ease'
               }}
             >
@@ -359,21 +507,21 @@ export default function BudgetSummary({
         
       </div>
 
-      {/* 4 Category Breakdown Cards */}
-      <div className="grid-4">
-        {buckets.map((b) => {
+      {/* Dynamic Category Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`, gap: '16px' }}>
+        {activeBuckets.map((b) => {
           const mBucketVal = monthlyBase * (b.pct / 100);
           const yBucketVal = mBucketVal * 12;
           const pcBucketVal = yBucketVal / periodsPerYr;
 
-          const isHovered = hoveredBucket === b.id;
+          const isHovered = hoveredBucketId === b.id;
 
           return (
             <div 
               key={b.id} 
               className="card-glass animate-fade-in"
-              onMouseEnter={() => setHoveredBucket(b.id)}
-              onMouseLeave={() => setHoveredBucket(null)}
+              onMouseEnter={() => setHoveredBucketId(b.id)}
+              onMouseLeave={() => setHoveredBucketId(null)}
               style={{ 
                 padding: '20px', 
                 display: 'flex', 
@@ -407,7 +555,7 @@ export default function BudgetSummary({
                     {b.name}
                   </h3>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.25 }}>
-                    {b.desc}
+                    {b.desc || `${b.pct}% of active take-home allocation`}
                   </p>
                 </div>
               </div>

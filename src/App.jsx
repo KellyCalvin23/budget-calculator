@@ -4,7 +4,7 @@ import BudgetSummary from './components/BudgetSummary';
 import ItemizedPlanner from './components/ItemizedPlanner';
 import WealthProjection from './components/WealthProjection';
 import ExportModal from './components/ExportModal';
-import { BUDGET_RULES } from './utils/rules';
+import { BUDGET_RULES, INITIAL_CUSTOM_BUCKETS } from './utils/rules';
 import { PAY_FREQUENCIES, CURRENCIES, convertCurrency } from './utils/currency';
 
 export default function App() {
@@ -33,12 +33,13 @@ export default function App() {
   // Selected Rule ID
   const [selectedRuleId, setSelectedRuleId] = useState('50-15-5-30');
 
-  // Custom bucket ratios if rule === 'custom'
-  const [customRatios, setCustomRatios] = useState({
-    needs: 50,
-    invest: 15,
-    emergency: 5,
-    wants: 30
+  // Custom bucket list state for Custom Rule
+  const [customBuckets, setCustomBuckets] = useState(() => {
+    const saved = localStorage.getItem('sb_custom_buckets');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return INITIAL_CUSTOM_BUCKETS;
   });
 
   // Export Modal state
@@ -61,7 +62,12 @@ export default function App() {
     localStorage.setItem('sb_income', income);
   }, [income]);
 
-  // Handle currency change with smart conversion if desired
+  // Sync customBuckets to localStorage
+  useEffect(() => {
+    localStorage.setItem('sb_custom_buckets', JSON.stringify(customBuckets));
+  }, [customBuckets]);
+
+  // Handle currency change with smart conversion
   const handleCurrencyChange = (newCurrency) => {
     if (newCurrency === currency) return;
     const currentVal = parseFloat(income) || 0;
@@ -87,13 +93,11 @@ export default function App() {
     monthlyIncomeBase = (rawIncome * periodsPerYr) / 12;
   }
 
-  // Active bucket percentages helper
-  const getActiveBucketPcts = () => {
-    if (selectedRuleId === 'custom') return customRatios;
+  // Active buckets helper
+  const getActiveBuckets = () => {
+    if (selectedRuleId === 'custom') return customBuckets;
     const def = BUDGET_RULES[selectedRuleId] || BUDGET_RULES['50-15-5-30'];
-    const pcts = {};
-    def.buckets.forEach(b => { pcts[b.id] = b.pct; });
-    return pcts;
+    return def.buckets;
   };
 
   return (
@@ -124,8 +128,9 @@ export default function App() {
             setFreq={setFreq}
             selectedRuleId={selectedRuleId}
             setSelectedRuleId={setSelectedRuleId}
-            customRatios={customRatios}
-            setCustomRatios={setCustomRatios}
+            customBuckets={customBuckets}
+            setCustomBuckets={setCustomBuckets}
+            activeBuckets={getActiveBuckets()}
           />
         )}
 
@@ -133,7 +138,7 @@ export default function App() {
           <ItemizedPlanner 
             monthlyIncome={monthlyIncomeBase}
             currency={currency}
-            ruleBucketPcts={getActiveBucketPcts()}
+            activeBuckets={getActiveBuckets()}
           />
         )}
 
@@ -141,7 +146,7 @@ export default function App() {
           <WealthProjection 
             monthlyIncome={monthlyIncomeBase}
             currency={currency}
-            ruleBucketPcts={getActiveBucketPcts()}
+            activeBuckets={getActiveBuckets()}
           />
         )}
 
@@ -156,7 +161,7 @@ export default function App() {
         period={period}
         freq={freq}
         selectedRuleId={selectedRuleId}
-        customRatios={customRatios}
+        activeBuckets={getActiveBuckets()}
       />
 
     </div>

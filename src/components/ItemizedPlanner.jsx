@@ -1,32 +1,40 @@
 import React, { useState } from 'react';
 import { formatCurrency, CURRENCIES } from '../utils/currency';
-import { Plus, Trash2, AlertCircle, CheckCircle, ArrowUpRight } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPcts }) {
-  // Pre-populated default sample expenses tailored to Rwandan Franc / General user
+export default function ItemizedPlanner({ monthlyIncome, currency, activeBuckets }) {
+  // Pre-populated default sample expenses
   const initialExpenses = currency === 'RWF' ? [
-    { id: 1, name: 'House Rent (Kigali)', amount: 250000, category: 'needs' },
-    { id: 2, name: 'Groceries & Food', amount: 120000, category: 'needs' },
-    { id: 3, name: 'REG Electricity & Water', amount: 30000, category: 'needs' },
-    { id: 4, name: 'Moto & Taxi Transport', amount: 50000, category: 'needs' },
-    { id: 5, name: 'RNIT Mutual Fund / Shares', amount: 150000, category: 'invest' },
-    { id: 6, name: 'Bank Emergency Deposit', amount: 50000, category: 'emergency' },
-    { id: 7, name: 'Dining Out & Entertainment', amount: 100000, category: 'wants' },
+    { id: 1, name: 'House Rent (Kigali)', amount: 250000, categoryId: activeBuckets[0]?.id || 'b1' },
+    { id: 2, name: 'Groceries & Food', amount: 120000, categoryId: activeBuckets[0]?.id || 'b1' },
+    { id: 3, name: 'REG Electricity & Water', amount: 30000, categoryId: activeBuckets[0]?.id || 'b1' },
+    { id: 4, name: 'RNIT Mutual Fund / Shares', amount: 150000, categoryId: activeBuckets[1]?.id || 'b2' },
+    { id: 5, name: 'Bank Emergency Deposit', amount: 50000, categoryId: activeBuckets[2]?.id || 'b3' },
+    { id: 6, name: 'Dining Out & Entertainment', amount: 100000, categoryId: activeBuckets[3]?.id || 'b4' },
   ] : [
-    { id: 1, name: 'Apartment Rent', amount: 1500, category: 'needs' },
-    { id: 2, name: 'Groceries & Household', amount: 600, category: 'needs' },
-    { id: 3, name: 'Utilities & Internet', amount: 200, category: 'needs' },
-    { id: 4, name: 'Index Fund Investment', amount: 750, category: 'invest' },
-    { id: 5, name: 'High-Yield Emergency Savings', amount: 250, category: 'emergency' },
-    { id: 6, name: 'Dining & Outings', amount: 400, category: 'wants' },
+    { id: 1, name: 'Apartment Rent', amount: 1500, categoryId: activeBuckets[0]?.id || 'b1' },
+    { id: 2, name: 'Groceries & Household', amount: 600, categoryId: activeBuckets[0]?.id || 'b1' },
+    { id: 3, name: 'Index Fund Investment', amount: 750, categoryId: activeBuckets[1]?.id || 'b2' },
+    { id: 4, name: 'Emergency Savings', amount: 250, categoryId: activeBuckets[2]?.id || 'b3' },
+    { id: 5, name: 'Dining & Outings', amount: 400, categoryId: activeBuckets[3]?.id || 'b4' },
   ];
 
   const [expenses, setExpenses] = useState(initialExpenses);
   const [newItemName, setNewItemName] = useState('');
   const [newItemAmount, setNewItemAmount] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState('needs');
+  const [newItemCategory, setNewItemCategory] = useState(activeBuckets[0]?.id || '');
 
-  // Handle item addition
+  // Compute category totals dynamically
+  const categoryTotals = {};
+  activeBuckets.forEach(b => {
+    categoryTotals[b.id] = expenses
+      .filter(e => e.categoryId === b.id)
+      .reduce((sum, e) => sum + e.amount, 0);
+  });
+
+  const totalSpent = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+
+  // Handle addition
   const handleAddExpense = (e) => {
     e.preventDefault();
     if (!newItemName.trim() || isNaN(newItemAmount) || parseFloat(newItemAmount) <= 0) return;
@@ -37,123 +45,95 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
         id: Date.now(),
         name: newItemName.trim(),
         amount: parseFloat(newItemAmount),
-        category: newItemCategory
+        categoryId: newItemCategory || activeBuckets[0]?.id
       }
     ]);
     setNewItemName('');
     setNewItemAmount('');
   };
 
-  // Handle item deletion
   const handleDeleteExpense = (id) => {
     setExpenses(expenses.filter(e => e.id !== id));
   };
 
-  // Compute category totals
-  const categoryTotals = {
-    needs: expenses.filter(e => e.category === 'needs').reduce((sum, e) => sum + e.amount, 0),
-    invest: expenses.filter(e => e.category === 'invest').reduce((sum, e) => sum + e.amount, 0),
-    emergency: expenses.filter(e => e.category === 'emergency').reduce((sum, e) => sum + e.amount, 0),
-    wants: expenses.filter(e => e.category === 'wants').reduce((sum, e) => sum + e.amount, 0)
-  };
-
-  const totalSpent = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
-
-  // Targets from monthly income
-  const targets = {
-    needs: monthlyIncome * ((ruleBucketPcts.needs || 50) / 100),
-    invest: monthlyIncome * ((ruleBucketPcts.invest || 15) / 100),
-    emergency: monthlyIncome * ((ruleBucketPcts.emergency || 5) / 100),
-    wants: monthlyIncome * ((ruleBucketPcts.wants || 30) / 100)
-  };
-
-  const categories = [
-    { id: 'needs', name: 'Must-Haves & Needs', pct: ruleBucketPcts.needs || 50, color: 'var(--c-needs)' },
-    { id: 'invest', name: 'Retirement & Investing', pct: ruleBucketPcts.invest || 15, color: 'var(--c-invest)' },
-    { id: 'emergency', name: 'Emergency Savings', pct: ruleBucketPcts.emergency || 5, color: 'var(--c-emergency)' },
-    { id: 'wants', name: 'Wants & Lifestyle', pct: ruleBucketPcts.wants || 30, color: 'var(--c-wants)' }
-  ];
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Header Info Banner */}
-      <div className="card-glass" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="card-glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
             Itemized Expense Checker
           </h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            Compare your actual individual monthly expenses in {currency} against target 50/15/5/30 guidelines.
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Track actual monthly line-item expenditures against active target budget limits.
           </p>
         </div>
 
         <div style={{ textAlign: 'right' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
             Total Itemized Spent
           </span>
-          <div className="tabular-num" style={{ fontSize: '1.65rem', fontWeight: 800, color: totalSpent > monthlyIncome ? 'var(--rose-primary)' : 'var(--emerald-primary)' }}>
+          <div className="tabular-num" style={{ fontSize: '1.5rem', fontWeight: 800, color: totalSpent > monthlyIncome ? 'var(--rose-primary)' : 'var(--emerald-primary)' }}>
             {formatCurrency(totalSpent, currency)}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Target Monthly Cap: {formatCurrency(monthlyIncome, currency)}
+            Monthly Budget Cap: {formatCurrency(monthlyIncome, currency)}
           </span>
         </div>
       </div>
 
-      {/* 4 Category Target Comparison Grid */}
-      <div className="grid-4">
-        {categories.map((cat) => {
+      {/* Target Comparison Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`, gap: '16px' }}>
+        {activeBuckets.map((cat) => {
           const spent = categoryTotals[cat.id] || 0;
-          const target = targets[cat.id] || 0;
+          const target = monthlyIncome * (cat.pct / 100);
           const diff = target - spent;
           const isOver = spent > target;
 
           return (
-            <div key={cat.id} className="card-glass" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div key={cat.id} className="card-glass" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: cat.color }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: cat.color }}>
                   {cat.name} ({cat.pct}%)
                 </span>
                 {isOver ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--rose-primary)', fontSize: '0.75rem', fontWeight: 700 }}>
-                    <AlertCircle size={14} /> Over Target
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--rose-primary)', fontSize: '0.725rem', fontWeight: 700 }}>
+                    <AlertCircle size={13} /> Over
                   </span>
                 ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--emerald-primary)', fontSize: '0.75rem', fontWeight: 700 }}>
-                    <CheckCircle size={14} /> Within Limit
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--emerald-primary)', fontSize: '0.725rem', fontWeight: 700 }}>
+                    <CheckCircle size={13} /> OK
                   </span>
                 )}
               </div>
 
               {/* Progress bar */}
-              <div>
-                <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${Math.min(100, target > 0 ? (spent / target) * 100 : 0)}%`, 
-                    background: isOver ? 'var(--rose-primary)' : cat.color,
-                    borderRadius: '4px',
-                    transition: 'width 0.3s ease'
-                  }} />
-                </div>
+              <div style={{ height: '6px', background: 'var(--bg-surface-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ 
+                  height: '100%', 
+                  width: `${Math.min(100, target > 0 ? (spent / target) * 100 : 0)}%`, 
+                  background: isOver ? 'var(--rose-primary)' : cat.color,
+                  borderRadius: '3px',
+                  transition: 'width 0.3s ease'
+                }} />
               </div>
 
               {/* Values */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }} className="tabular-num">
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }} className="tabular-num">
                 <span style={{ color: 'var(--text-secondary)' }}>Spent: <b>{formatCurrency(spent, currency)}</b></span>
-                <span style={{ color: 'var(--text-muted)' }}>Target: <b>{formatCurrency(target, currency)}</b></span>
+                <span style={{ color: 'var(--text-muted)' }}>Cap: <b>{formatCurrency(target, currency)}</b></span>
               </div>
 
               {/* Variance Tag */}
-              <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.78125rem', fontWeight: 700 }}>
+              <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.75rem', fontWeight: 700 }}>
                 {isOver ? (
                   <span style={{ color: 'var(--rose-primary)' }}>
-                    Over target by {formatCurrency(Math.abs(diff), currency)}
+                    +{formatCurrency(Math.abs(diff), currency)} over cap
                   </span>
                 ) : (
                   <span style={{ color: 'var(--emerald-primary)' }}>
-                    {formatCurrency(diff, currency)} remaining under target
+                    {formatCurrency(diff, currency)} under cap
                   </span>
                 )}
               </div>
@@ -163,32 +143,32 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
       </div>
 
       {/* Add New Line Item Form & Expense Table */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
         
         {/* Form */}
-        <div className="card-glass" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={18} color="var(--emerald-primary)" /> Add Custom Expense Item
+        <div className="card-glass" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={16} color="var(--emerald-primary)" /> Add Expense Item
           </h3>
 
-          <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Expense Name / Label
+              <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Expense Item Name
               </label>
               <input 
                 type="text" 
-                placeholder="e.g. Internet subscription, Gym, Moto"
+                placeholder="e.g. Internet, Gym, Moto, Rent"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 className="input-field"
-                style={{ fontSize: '0.95rem', padding: '10px 14px' }}
+                style={{ fontSize: '0.875rem', padding: '8px 12px' }}
                 required
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Monthly Amount ({currency})
               </label>
               <input 
@@ -199,25 +179,26 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
                 value={newItemAmount}
                 onChange={(e) => setNewItemAmount(e.target.value)}
                 className="input-field tabular-num"
-                style={{ fontSize: '0.95rem', padding: '10px 14px' }}
+                style={{ fontSize: '0.875rem', padding: '8px 12px' }}
                 required
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Budget Bucket Category
+              <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Category Bucket
               </label>
               <select 
-                value={newItemCategory}
+                value={newItemCategory || activeBuckets[0]?.id || ''}
                 onChange={(e) => setNewItemCategory(e.target.value)}
                 className="input-field"
-                style={{ fontSize: '0.95rem', padding: '10px 14px' }}
+                style={{ fontSize: '0.875rem', padding: '8px 12px' }}
               >
-                <option value="needs" style={{ background: 'var(--bg-surface)' }}>Must-Haves & Needs (50%)</option>
-                <option value="invest" style={{ background: 'var(--bg-surface)' }}>Retirement & Investing (15%)</option>
-                <option value="emergency" style={{ background: 'var(--bg-surface)' }}>Emergency Savings (5%)</option>
-                <option value="wants" style={{ background: 'var(--bg-surface)' }}>Wants & Lifestyle (30%)</option>
+                {activeBuckets.map(b => (
+                  <option key={b.id} value={b.id} style={{ background: 'var(--bg-surface)' }}>
+                    {b.name} ({b.pct}%)
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -227,32 +208,32 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
                 background: 'linear-gradient(135deg, #10b981, #059669)',
                 color: '#fff',
                 border: 'none',
-                padding: '12px 20px',
-                borderRadius: '12px',
+                padding: '10px 16px',
+                borderRadius: '10px',
                 fontWeight: 700,
-                fontSize: '0.95rem',
+                fontSize: '0.875rem',
                 cursor: 'pointer',
-                marginTop: '8px',
+                marginTop: '4px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '6px'
               }}
             >
-              <Plus size={18} /> Add to Itemized List
+              <Plus size={16} /> Add Expense
             </button>
           </form>
         </div>
 
         {/* Expense List Table */}
-        <div className="card-glass" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>
-            Current Itemized Expenditures ({expenses.length})
+        <div className="card-glass" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px' }}>
+            Current Itemized List ({expenses.length})
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '380px', overflowY: 'auto' }}>
             {expenses.map((exp) => {
-              const catObj = categories.find(c => c.id === exp.category);
+              const catObj = activeBuckets.find(c => c.id === exp.categoryId) || activeBuckets[0];
               return (
                 <div 
                   key={exp.id}
@@ -260,26 +241,26 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
                     background: 'var(--bg-surface-elevated)',
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
                   <div>
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                       {exp.name}
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: catObj?.color }} />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {catObj?.name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: catObj?.color || '#10b981' }} />
+                      <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                        {catObj?.name || 'Category'}
                       </span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <span className="tabular-num" style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="tabular-num" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                       {formatCurrency(exp.amount, currency)}
                     </span>
                     <button
@@ -290,13 +271,10 @@ export default function ItemizedPlanner({ monthlyIncome, currency, ruleBucketPct
                         border: 'none',
                         color: 'var(--rose-primary)',
                         cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '6px',
-                        display: 'grid',
-                        placeItems: 'center'
+                        padding: '4px'
                       }}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
