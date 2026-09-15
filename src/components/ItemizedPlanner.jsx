@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { formatCurrency } from '../utils/currency';
-import { PRESET_COLORS } from '../utils/rules';
+import { PRESET_COLORS, PARENT_ALLOCATIONS } from '../utils/rules';
 import { 
   formatMonthKey, 
   getPreviousMonthKey, 
@@ -18,7 +18,8 @@ import {
   ChevronRight, 
   Copy, 
   ArrowDownRight, 
-  ArrowUpRight 
+  ArrowUpRight,
+  Link2 
 } from 'lucide-react';
 
 export default function ItemizedPlanner({ 
@@ -66,11 +67,12 @@ export default function ItemizedPlanner({
   const [newItemAmount, setNewItemAmount] = useState('');
   const [newItemCategory, setNewItemCategory] = useState(activeBuckets[0]?.id || '');
 
-  // Add Bucket modal/form toggle state
+  // Add Bucket form state
   const [isAddingBucket, setIsAddingBucket] = useState(false);
   const [newBucketName, setNewBucketName] = useState('');
   const [newBucketPct, setNewBucketPct] = useState('10');
-  const [newBucketColor, setNewBucketColor] = useState(PRESET_COLORS[0]);
+  const [newBucketParent, setNewBucketParent] = useState('wants');
+  const [newBucketColor, setNewBucketColor] = useState('#8b5cf6');
 
   // Compute category totals dynamically for active month
   const categoryTotals = {};
@@ -130,18 +132,20 @@ export default function ItemizedPlanner({
     setExpensesForActiveMonth(updated);
   };
 
-  // Handle adding a brand new category bucket directly inside the tracker!
+  // Handle adding a brand new category bucket linked to a main allocation!
   const handleCreateNewBucket = (e) => {
     e.preventDefault();
     if (!newBucketName.trim()) return;
 
+    const parentObj = PARENT_ALLOCATIONS.find(p => p.id === newBucketParent);
     const newId = 'custom-tracker-' + Date.now();
     const newBucketObj = {
       id: newId,
       name: newBucketName.trim(),
       pct: parseInt(newBucketPct) || 10,
-      color: newBucketColor,
-      desc: 'Custom Category Bucket'
+      parentAllocation: newBucketParent,
+      color: parentObj?.defaultColor || newBucketColor,
+      desc: parentObj ? `Linked to ${parentObj.name}` : 'Custom Category Bucket'
     };
 
     let updatedList = [];
@@ -201,10 +205,9 @@ export default function ItemizedPlanner({
           </div>
         </div>
 
-        {/* Action Buttons: Copy from prev month & Add Bucket */}
+        {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           
-          {/* Copy from Prev Month Button */}
           <button
             onClick={handleCopyFromPrevMonth}
             title="Clone expenses from previous month"
@@ -225,7 +228,6 @@ export default function ItemizedPlanner({
             <Copy size={15} color="var(--emerald-primary)" /> Copy From Prev Month
           </button>
 
-          {/* Add Category Bucket Button */}
           <button
             onClick={() => setIsAddingBucket(!isAddingBucket)}
             style={{
@@ -280,7 +282,6 @@ export default function ItemizedPlanner({
         {/* 3 Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
           
-          {/* Monthly Income Cap */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               Monthly Income Cap
@@ -290,7 +291,6 @@ export default function ItemizedPlanner({
             </div>
           </div>
 
-          {/* Amount Spent */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowDownRight size={14} color="var(--rose-primary)" /> Amount Spent
@@ -300,7 +300,6 @@ export default function ItemizedPlanner({
             </div>
           </div>
 
-          {/* Amount Remaining */}
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowUpRight size={14} color="var(--emerald-primary)" /> Amount Remaining
@@ -312,7 +311,7 @@ export default function ItemizedPlanner({
 
         </div>
 
-        {/* Inline Add Category Bucket Panel */}
+        {/* Inline Add Category Bucket & Allocation Linker Panel */}
         {isAddingBucket && (
           <form 
             onSubmit={handleCreateNewBucket} 
@@ -328,23 +327,45 @@ export default function ItemizedPlanner({
             }}
           >
             <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--indigo-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <FolderPlus size={16} /> Create New Category Bucket
+              <FolderPlus size={16} /> Create Category Bucket & Link Allocation
             </h4>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', alignItems: 'center' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Bucket Name
+                  Bucket Name (e.g. Subscriptions)
                 </label>
                 <input 
                   type="text" 
-                  placeholder="e.g. School Fees, Side Biz"
+                  placeholder="e.g. Subscriptions, Gym, Netflix"
                   value={newBucketName}
                   onChange={(e) => setNewBucketName(e.target.value)}
                   className="input-field"
                   style={{ padding: '8px 12px', fontSize: '0.875rem' }}
                   required
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Link to Main Allocation:
+                </label>
+                <select
+                  value={newBucketParent}
+                  onChange={(e) => {
+                    setNewBucketParent(e.target.value);
+                    const parentObj = PARENT_ALLOCATIONS.find(p => p.id === e.target.value);
+                    if (parentObj) setNewBucketColor(parentObj.defaultColor);
+                  }}
+                  className="input-field"
+                  style={{ padding: '8px 12px', fontSize: '0.875rem' }}
+                >
+                  {PARENT_ALLOCATIONS.map(p => (
+                    <option key={p.id} value={p.id} style={{ background: 'var(--bg-surface)' }}>
+                      Link to: {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -362,29 +383,6 @@ export default function ItemizedPlanner({
                   required
                 />
               </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Category Color
-                </label>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {PRESET_COLORS.map((c) => (
-                    <span
-                      key={c}
-                      onClick={() => setNewBucketColor(c)}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: c,
-                        cursor: 'pointer',
-                        outline: newBucketColor === c ? '2px solid #fff' : 'none',
-                        outlineOffset: '2px'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
@@ -399,7 +397,7 @@ export default function ItemizedPlanner({
                 type="submit"
                 style={{ background: 'var(--indigo-primary)', color: '#fff', border: 'none', padding: '6px 16px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
               >
-                Save Category Bucket
+                Save & Link Category Bucket
               </button>
             </div>
           </form>
@@ -415,6 +413,7 @@ export default function ItemizedPlanner({
           const remaining = targetCap - spent;
           const isOver = spent > targetCap;
           const pctUsed = targetCap > 0 ? (spent / targetCap) * 100 : 0;
+          const linkedParent = PARENT_ALLOCATIONS.find(p => p.id === cat.parentAllocation);
 
           return (
             <div 
@@ -429,7 +428,7 @@ export default function ItemizedPlanner({
               }}
             >
               
-              {/* Card Header: Category Name & Status Badge */}
+              {/* Card Header: Category Name & Linked Parent Badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: cat.color, display: 'inline-block', flexShrink: 0 }} />
@@ -437,15 +436,21 @@ export default function ItemizedPlanner({
                     <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                       {cat.name}
                     </h3>
-                    <span style={{ fontSize: '0.725rem', color: cat.color, fontWeight: 700 }}>
-                      {cat.pct}% Allocated Budget
-                    </span>
+                    {linkedParent && linkedParent.id !== 'none' ? (
+                      <span style={{ fontSize: '0.7rem', color: cat.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <Link2 size={10} /> Linked: {linkedParent.name}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.725rem', color: cat.color, fontWeight: 700 }}>
+                        {cat.pct}% Allocated Cap
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {isOver ? (
                   <span style={{ background: 'rgba(244, 63, 94, 0.15)', color: 'var(--rose-primary)', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '2px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, flexShrink: 0 }}>
-                    Over Budget
+                    Over Cap
                   </span>
                 ) : (
                   <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--emerald-primary)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, flexShrink: 0 }}>
@@ -516,11 +521,11 @@ export default function ItemizedPlanner({
           <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                Expense Item Name
+                Expense Item Name (e.g. Netflix, Spotify, Gym)
               </label>
               <input 
                 type="text" 
-                placeholder="e.g. House Rent, Internet, Groceries, Moto"
+                placeholder="e.g. Netflix, Spotify, House Rent, Gym"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 className="input-field"
@@ -601,6 +606,8 @@ export default function ItemizedPlanner({
             ) : (
               expenses.map((exp) => {
                 const catObj = activeBuckets.find(c => c.id === exp.categoryId) || activeBuckets[0];
+                const linkedParent = PARENT_ALLOCATIONS.find(p => p.id === catObj?.parentAllocation);
+
                 return (
                   <div 
                     key={exp.id}
@@ -622,6 +629,7 @@ export default function ItemizedPlanner({
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: catObj?.color || '#10b981' }} />
                         <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
                           {catObj?.name || 'Category'}
+                          {linkedParent && linkedParent.id !== 'none' && ` (${linkedParent.name})`}
                         </span>
                       </div>
                     </div>
