@@ -76,14 +76,21 @@ export default function BudgetSummary({
 
   const handleAddCustomBucket = () => {
     const newId = 'custom-' + Date.now();
-    const colorIdx = customBuckets.length % PRESET_COLORS.length;
+    // Find first color from PRESET_COLORS not used in existing buckets
+    const usedColors = new Set(customBuckets.map(b => (b.color || '').toLowerCase()));
+    let nextColor = PRESET_COLORS.find(c => !usedColors.has(c.toLowerCase()));
+    if (!nextColor) {
+      const colorIdx = customBuckets.length % PRESET_COLORS.length;
+      nextColor = PRESET_COLORS[colorIdx];
+    }
+
     setCustomBuckets([
       ...customBuckets,
       {
         id: newId,
         name: `Category ${customBuckets.length + 1}`,
         pct: 10,
-        color: PRESET_COLORS[colorIdx],
+        color: nextColor,
         desc: 'Custom Category'
       }
     ]);
@@ -380,22 +387,60 @@ export default function BudgetSummary({
                   }}
                 >
                   {/* Category Name Input & Color Selector */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '50px' }}>
-                      {PRESET_COLORS.slice(0, 4).map((c) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: 1, minWidth: '220px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px', 
+                      flexWrap: 'wrap', 
+                      padding: '4px 6px',
+                      background: 'var(--bg-surface-elevated)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      {PRESET_COLORS.slice(0, Math.min(PRESET_COLORS.length, Math.max(customBuckets.length + 2, 8))).map((c) => (
                         <span
                           key={c}
                           onClick={() => handleUpdateBucketColor(b.id, c)}
+                          title={`Select color ${c}`}
                           style={{
-                            width: '12px',
-                            height: '12px',
+                            width: '13px',
+                            height: '13px',
                             borderRadius: '50%',
                             background: c,
                             cursor: 'pointer',
-                            outline: b.color === c ? '2px solid #fff' : 'none'
+                            outline: (b.color || '').toLowerCase() === c.toLowerCase() ? '2px solid #fff' : 'none',
+                            boxShadow: (b.color || '').toLowerCase() === c.toLowerCase() ? `0 0 6px ${c}` : 'none',
+                            transition: 'all 0.15s ease'
                           }}
                         />
                       ))}
+
+                      {/* Custom Color Wheel Picker */}
+                      <label title="Pick custom color" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0, position: 'relative' }}>
+                        <input 
+                          type="color"
+                          value={b.color || '#10b981'}
+                          onChange={(e) => handleUpdateBucketColor(b.id, e.target.value)}
+                          style={{
+                            position: 'absolute',
+                            opacity: 0,
+                            width: '100%',
+                            height: '100%',
+                            cursor: 'pointer'
+                          }}
+                        />
+                        <span style={{
+                          width: '13px',
+                          height: '13px',
+                          borderRadius: '50%',
+                          background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+                          display: 'inline-block',
+                          border: '1px solid rgba(255,255,255,0.7)',
+                          boxShadow: '0 0 3px rgba(0,0,0,0.5)',
+                          cursor: 'pointer'
+                        }} />
+                      </label>
                     </div>
 
                     <input 
@@ -404,7 +449,7 @@ export default function BudgetSummary({
                       onChange={(e) => handleUpdateBucketName(b.id, e.target.value)}
                       placeholder="Category Name"
                       className="input-field"
-                      style={{ padding: '6px 12px', fontSize: '0.875rem', fontWeight: 700 }}
+                      style={{ padding: '6px 12px', fontSize: '0.875rem', fontWeight: 700, flex: 1, minWidth: '120px' }}
                     />
                   </div>
 

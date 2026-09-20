@@ -55,5 +55,13 @@ export const PRESET_COLORS = [
   '#ec4899', // Pink
   '#06b6d4', // Cyan
   '#f97316', // Orange
+  '#6366f1', // Indigo
+  '#14b8a6', // Teal
+  '#84cc16', // Lime
+  '#f43f5e', // Rose
+  '#a855f7', // Violet
+  '#0284c7', // Sky
+  '#eab308', // Gold
+  '#d946ef', // Fuchsia
   '#64748b'  // Slate
 ];
