@@ -34,13 +34,22 @@ export default function App() {
   // Selected Rule ID
   const [selectedRuleId, setSelectedRuleId] = useState('50-15-5-30');
 
-  // Custom bucket list state for Custom Rule
+  // Custom bucket list state for Custom Rule builder
   const [customBuckets, setCustomBuckets] = useState(() => {
     const saved = localStorage.getItem('sb_custom_buckets');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
     return INITIAL_CUSTOM_BUCKETS;
+  });
+
+  // Saved Custom Presets List (User created saved rules)
+  const [savedCustomRules, setSavedCustomRules] = useState(() => {
+    const saved = localStorage.getItem('sb_saved_custom_rules');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
   });
 
   // Selected Month Key for Historical Month Tracking (e.g. "2026-09")
@@ -82,6 +91,11 @@ export default function App() {
     localStorage.setItem('sb_custom_buckets', JSON.stringify(customBuckets));
   }, [customBuckets]);
 
+  // Sync savedCustomRules to localStorage
+  useEffect(() => {
+    localStorage.setItem('sb_saved_custom_rules', JSON.stringify(savedCustomRules));
+  }, [savedCustomRules]);
+
   // Sync selectedMonthKey & monthlyExpensesMap
   useEffect(() => {
     localStorage.setItem('sb_active_month', selectedMonthKey);
@@ -90,6 +104,27 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('sb_monthly_expenses_map', JSON.stringify(monthlyExpensesMap));
   }, [monthlyExpensesMap]);
+
+  // Save a new custom rule preset
+  const handleSaveCustomRule = (name, buckets) => {
+    const newRule = {
+      id: 'saved-rule-' + Date.now(),
+      name: name.trim(),
+      description: `Custom preset: ${buckets.map(b => `${b.pct}% ${b.name}`).join(', ')}`,
+      buckets: buckets.map(b => ({ ...b }))
+    };
+    setSavedCustomRules([...savedCustomRules, newRule]);
+    setSelectedRuleId(newRule.id);
+  };
+
+  // Delete a saved custom rule preset
+  const handleDeleteCustomRule = (ruleId) => {
+    const updated = savedCustomRules.filter(r => r.id !== ruleId);
+    setSavedCustomRules(updated);
+    if (selectedRuleId === ruleId) {
+      setSelectedRuleId('50-15-5-30');
+    }
+  };
 
   // Handle currency change with smart conversion
   const handleCurrencyChange = (newCurrency) => {
@@ -120,8 +155,11 @@ export default function App() {
   // Active buckets helper
   const getActiveBuckets = () => {
     if (selectedRuleId === 'custom') return customBuckets;
-    const def = BUDGET_RULES[selectedRuleId] || BUDGET_RULES['50-15-5-30'];
-    return def.buckets;
+    const builtIn = BUDGET_RULES[selectedRuleId];
+    if (builtIn) return builtIn.buckets;
+    const userSaved = savedCustomRules.find(r => r.id === selectedRuleId);
+    if (userSaved) return userSaved.buckets;
+    return BUDGET_RULES['50-15-5-30'].buckets;
   };
 
   return (
@@ -154,6 +192,9 @@ export default function App() {
             setSelectedRuleId={setSelectedRuleId}
             customBuckets={customBuckets}
             setCustomBuckets={setCustomBuckets}
+            savedCustomRules={savedCustomRules}
+            onSaveCustomRule={handleSaveCustomRule}
+            onDeleteCustomRule={handleDeleteCustomRule}
             activeBuckets={getActiveBuckets()}
           />
         )}

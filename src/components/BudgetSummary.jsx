@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, PAY_FREQUENCIES, CURRENCIES } from '../utils/currency';
 import { BUDGET_RULES, PRESET_COLORS } from '../utils/rules';
-import { Plus, Trash2, Scale } from 'lucide-react';
+import { Plus, Trash2, Scale, BookmarkPlus, Check, X } from 'lucide-react';
 
 export default function BudgetSummary({ 
   income, 
@@ -15,9 +15,16 @@ export default function BudgetSummary({
   setSelectedRuleId,
   customBuckets,
   setCustomBuckets,
+  savedCustomRules = [],
+  onSaveCustomRule,
+  onDeleteCustomRule,
   activeBuckets
 }) {
   const [hoveredBucketId, setHoveredBucketId] = useState(null);
+  
+  // Custom preset saving state
+  const [presetNameInput, setPresetNameInput] = useState('');
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
   // Active currency details
   const currDetails = CURRENCIES[currency] || CURRENCIES.RWF;
@@ -27,8 +34,17 @@ export default function BudgetSummary({
     ? [300000, 600000, 1200000, 2500000, 5000000]
     : [2000, 3500, 5000, 8000, 12000];
 
-  // Active rule definition
-  const currentRuleDef = BUDGET_RULES[selectedRuleId] || BUDGET_RULES['50-15-5-30'];
+  // Active rule description
+  const getRuleDescription = () => {
+    if (selectedRuleId === 'custom') {
+      return 'Create your own custom percentage allocations below and save them as presets!';
+    }
+    const builtIn = BUDGET_RULES[selectedRuleId];
+    if (builtIn) return builtIn.description;
+    const userSaved = savedCustomRules.find(r => r.id === selectedRuleId);
+    if (userSaved) return userSaved.description || `Saved Custom Preset: ${userSaved.name}`;
+    return 'Custom budget distribution.';
+  };
 
   // Convert raw income into normalized monthly base
   const rawIncome = parseFloat(income) || 0;
@@ -91,6 +107,23 @@ export default function BudgetSummary({
       return { ...b, pct: newPct };
     });
     setCustomBuckets(balanced);
+  };
+
+  const handleSavePresetForm = (e) => {
+    e.preventDefault();
+    if (!presetNameInput.trim()) return;
+    
+    // Auto-balance if sum is not 100
+    const totalSum = customBuckets.reduce((sum, b) => sum + b.pct, 0);
+    let finalBuckets = customBuckets;
+    if (totalSum !== 100) {
+      handleAutoBalance();
+    }
+
+    onSaveCustomRule(presetNameInput.trim(), finalBuckets);
+    setPresetNameInput('');
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 3000);
   };
 
   const customSum = customBuckets.reduce((sum, b) => sum + b.pct, 0);
@@ -209,12 +242,14 @@ export default function BudgetSummary({
 
         </div>
 
-        {/* Rule Switcher Bar */}
+        {/* Rule Switcher Bar with Built-In Rules + User Saved Presets */}
         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', overflowX: 'auto', paddingBottom: '4px' }}>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Rule:</span>
-            <div className="segmented-control">
+            <div className="segmented-control" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px' }}>
+              
+              {/* Built-In Rules */}
               {Object.values(BUDGET_RULES).map((r) => (
                 <button
                   key={r.id}
@@ -225,32 +260,71 @@ export default function BudgetSummary({
                   {r.id.toUpperCase().replace(/-/g, '/')}
                 </button>
               ))}
+
+              {/* User Saved Presets */}
+              {savedCustomRules.map((rule) => (
+                <div 
+                  key={rule.id}
+                  style={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <button
+                    type="button"
+                    className={`segmented-btn ${selectedRuleId === rule.id ? 'active' : ''}`}
+                    onClick={() => setSelectedRuleId(rule.id)}
+                    style={{ paddingRight: '6px' }}
+                  >
+                    ★ {rule.name}
+                  </button>
+
+                  {/* Delete User Preset Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteCustomRule(rule.id);
+                    }}
+                    title={`Delete preset "${rule.name}"`}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '4px 6px',
+                      display: 'grid',
+                      placeItems: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+
+              {/* Custom Builder Button */}
               <button
                 type="button"
                 className={`segmented-btn ${selectedRuleId === 'custom' ? 'active' : ''}`}
                 onClick={() => setSelectedRuleId('custom')}
               >
-                Custom
+                + Custom Builder
               </button>
             </div>
           </div>
 
           <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', width: '100%' }}>
-            {selectedRuleId === 'custom' 
-              ? 'Adjust sliders below to create custom ratio allocations.' 
-              : currentRuleDef.description}
+            {getRuleDescription()}
           </p>
 
         </div>
 
-        {/* Dynamic Custom Category Builder */}
+        {/* Dynamic Custom Category Builder & Save Preset Form */}
         {selectedRuleId === 'custom' && (
           <div style={{ marginTop: '18px', padding: '18px', background: 'var(--bg-surface-elevated)', borderRadius: '16px', border: '1px dashed var(--emerald-primary)' }}>
             
-            {/* Header bar with total sum and actions */}
+            {/* Top Bar: Title & Auto-Balance */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
               <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--emerald-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                Custom Categories ({customBuckets.length})
+                Custom Rule Builder ({customBuckets.length} categories)
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -290,13 +364,13 @@ export default function BudgetSummary({
             </div>
 
             {/* List of Custom Categories */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {customBuckets.map((b) => (
                 <div 
                   key={b.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) auto',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto',
                     gap: '12px',
                     alignItems: 'center',
                     background: 'var(--bg-surface)',
@@ -306,8 +380,8 @@ export default function BudgetSummary({
                   }}
                 >
                   {/* Category Name Input & Color Selector */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '70px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '50px' }}>
                       {PRESET_COLORS.slice(0, 4).map((c) => (
                         <span
                           key={c}
@@ -318,8 +392,7 @@ export default function BudgetSummary({
                             borderRadius: '50%',
                             background: c,
                             cursor: 'pointer',
-                            outline: b.color === c ? '2px solid #fff' : 'none',
-                            outlineOffset: '1px'
+                            outline: b.color === c ? '2px solid #fff' : 'none'
                           }}
                         />
                       ))}
@@ -336,7 +409,7 @@ export default function BudgetSummary({
                   </div>
 
                   {/* Percentage Slider */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input 
                       type="range"
                       min="0"
@@ -346,7 +419,7 @@ export default function BudgetSummary({
                       onChange={(e) => handleUpdateBucketPct(b.id, e.target.value)}
                       style={{ flex: 1, accentColor: b.color, cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: b.color, minWidth: '42px', textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: b.color, minWidth: '40px', textAlign: 'right' }}>
                       {b.pct}%
                     </span>
                   </div>
@@ -374,16 +447,17 @@ export default function BudgetSummary({
               ))}
             </div>
 
-            {/* Add New Category Button */}
-            <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'flex-start' }}>
+            {/* Bottom Actions: Add Category + Save Preset Form */}
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+              
               <button
                 type="button"
                 onClick={handleAddCustomBucket}
                 style={{
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '8px 16px',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '8px 14px',
                   borderRadius: '10px',
                   fontSize: '0.8125rem',
                   fontWeight: 700,
@@ -393,8 +467,46 @@ export default function BudgetSummary({
                   gap: '6px'
                 }}
               >
-                <Plus size={16} /> Add Custom Category
+                <Plus size={16} color="var(--emerald-primary)" /> Add Category
               </button>
+
+              {/* Save Preset Form */}
+              <form onSubmit={handleSavePresetForm} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <input 
+                  type="text"
+                  placeholder="Preset Name (e.g. Student Budget)"
+                  value={presetNameInput}
+                  onChange={(e) => setPresetNameInput(e.target.value)}
+                  className="input-field"
+                  style={{ padding: '6px 12px', fontSize: '0.8125rem', width: '220px' }}
+                  required
+                />
+                <button
+                  type="submit"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <BookmarkPlus size={16} /> Save Rule Preset
+                </button>
+
+                {showSaveSuccess && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--emerald-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Check size={14} /> Preset Saved!
+                  </span>
+                )}
+              </form>
+
             </div>
 
           </div>
