@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, PAY_FREQUENCIES, CURRENCIES } from '../utils/currency';
-import { BUDGET_RULES, PRESET_COLORS, PARENT_ALLOCATIONS } from '../utils/rules';
-import { Plus, Trash2, Scale, Link2 } from 'lucide-react';
+import { BUDGET_RULES, PRESET_COLORS } from '../utils/rules';
+import { Plus, Trash2, Scale } from 'lucide-react';
 
 export default function BudgetSummary({ 
   income, 
@@ -58,32 +58,17 @@ export default function BudgetSummary({
     setCustomBuckets(customBuckets.map(b => b.id === id ? { ...b, color: newColor } : b));
   };
 
-  const handleUpdateParentAllocation = (id, newParentId) => {
-    const parentObj = PARENT_ALLOCATIONS.find(p => p.id === newParentId);
-    setCustomBuckets(customBuckets.map(b => {
-      if (b.id === id) {
-        return { 
-          ...b, 
-          parentAllocation: newParentId,
-          color: parentObj?.defaultColor || b.color
-        };
-      }
-      return b;
-    }));
-  };
-
   const handleAddCustomBucket = () => {
     const newId = 'custom-' + Date.now();
-    const defaultParent = PARENT_ALLOCATIONS[0]; // Wants by default for custom like Subscriptions
+    const colorIdx = customBuckets.length % PRESET_COLORS.length;
     setCustomBuckets([
       ...customBuckets,
       {
         id: newId,
-        name: `Subscriptions`,
+        name: `Category ${customBuckets.length + 1}`,
         pct: 10,
-        parentAllocation: defaultParent.id,
-        color: defaultParent.defaultColor,
-        desc: 'Linked category allocation'
+        color: PRESET_COLORS[colorIdx],
+        desc: 'Custom Category'
       }
     ]);
   };
@@ -245,27 +230,27 @@ export default function BudgetSummary({
                 className={`segmented-btn ${selectedRuleId === 'custom' ? 'active' : ''}`}
                 onClick={() => setSelectedRuleId('custom')}
               >
-                Custom & Linked Categories
+                Custom
               </button>
             </div>
           </div>
 
           <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', width: '100%' }}>
             {selectedRuleId === 'custom' 
-              ? 'Customize category buckets and link them to main allocations (e.g. Subscriptions -> Wants, Rent -> Needs).' 
+              ? 'Adjust sliders below to create custom ratio allocations.' 
               : currentRuleDef.description}
           </p>
 
         </div>
 
-        {/* Dynamic Custom Category Builder & Allocation Linker */}
+        {/* Dynamic Custom Category Builder */}
         {selectedRuleId === 'custom' && (
           <div style={{ marginTop: '18px', padding: '18px', background: 'var(--bg-surface-elevated)', borderRadius: '16px', border: '1px dashed var(--emerald-primary)' }}>
             
             {/* Header bar with total sum and actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
               <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--emerald-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Link2 size={16} /> Custom Categories & Allocation Linker ({customBuckets.length})
+                Custom Categories ({customBuckets.length})
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -306,106 +291,87 @@ export default function BudgetSummary({
 
             {/* List of Custom Categories */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {customBuckets.map((b) => {
-                const linkedParent = PARENT_ALLOCATIONS.find(p => p.id === b.parentAllocation);
-                return (
-                  <div 
-                    key={b.id}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto',
-                      gap: '12px',
-                      alignItems: 'center',
-                      background: 'var(--bg-surface)',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border-subtle)'
-                    }}
-                  >
-                    {/* Category Name Input & Color Selector */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '50px' }}>
-                        {PRESET_COLORS.slice(0, 3).map((c) => (
-                          <span
-                            key={c}
-                            onClick={() => handleUpdateBucketColor(b.id, c)}
-                            style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              background: c,
-                              cursor: 'pointer',
-                              outline: b.color === c ? '2px solid #fff' : 'none'
-                            }}
-                          />
-                        ))}
-                      </div>
-
-                      <input 
-                        type="text"
-                        value={b.name}
-                        onChange={(e) => handleUpdateBucketName(b.id, e.target.value)}
-                        placeholder="Category Name"
-                        className="input-field"
-                        style={{ padding: '6px 10px', fontSize: '0.85rem', fontWeight: 700 }}
-                      />
+              {customBuckets.map((b) => (
+                <div 
+                  key={b.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) auto',
+                    gap: '12px',
+                    alignItems: 'center',
+                    background: 'var(--bg-surface)',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  {/* Category Name Input & Color Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', maxWidth: '70px' }}>
+                      {PRESET_COLORS.slice(0, 4).map((c) => (
+                        <span
+                          key={c}
+                          onClick={() => handleUpdateBucketColor(b.id, c)}
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: c,
+                            cursor: 'pointer',
+                            outline: b.color === c ? '2px solid #fff' : 'none',
+                            outlineOffset: '1px'
+                          }}
+                        />
+                      ))}
                     </div>
 
-                    {/* Parent Allocation Linker Dropdown */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Link2 size={14} color="var(--indigo-primary)" />
-                      <select
-                        value={b.parentAllocation || 'none'}
-                        onChange={(e) => handleUpdateParentAllocation(b.id, e.target.value)}
-                        className="input-field"
-                        style={{ padding: '6px 8px', fontSize: '0.78125rem', fontWeight: 600 }}
-                      >
-                        {PARENT_ALLOCATIONS.map(p => (
-                          <option key={p.id} value={p.id} style={{ background: 'var(--bg-surface)' }}>
-                            Link to: {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Percentage Slider */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input 
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={b.pct}
-                        onChange={(e) => handleUpdateBucketPct(b.id, e.target.value)}
-                        style={{ flex: 1, accentColor: b.color, cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: b.color, minWidth: '40px', textAlign: 'right' }}>
-                        {b.pct}%
-                      </span>
-                    </div>
-
-                    {/* Delete Button */}
-                    {customBuckets.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCustomBucket(b.id)}
-                        title="Delete category"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--rose-primary)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          display: 'grid',
-                          placeItems: 'center'
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+                    <input 
+                      type="text"
+                      value={b.name}
+                      onChange={(e) => handleUpdateBucketName(b.id, e.target.value)}
+                      placeholder="Category Name"
+                      className="input-field"
+                      style={{ padding: '6px 12px', fontSize: '0.875rem', fontWeight: 700 }}
+                    />
                   </div>
-                );
-              })}
+
+                  {/* Percentage Slider */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={b.pct}
+                      onChange={(e) => handleUpdateBucketPct(b.id, e.target.value)}
+                      style={{ flex: 1, accentColor: b.color, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: b.color, minWidth: '42px', textAlign: 'right' }}>
+                      {b.pct}%
+                    </span>
+                  </div>
+
+                  {/* Delete Button */}
+                  {customBuckets.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCustomBucket(b.id)}
+                      title="Delete category"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--rose-primary)',
+                        cursor: 'pointer',
+                        padding: '6px',
+                        display: 'grid',
+                        placeItems: 'center'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* Add New Category Button */}
@@ -427,7 +393,7 @@ export default function BudgetSummary({
                   gap: '6px'
                 }}
               >
-                <Plus size={16} /> Add Custom Category (e.g. Subscriptions)
+                <Plus size={16} /> Add Custom Category
               </button>
             </div>
 
@@ -515,34 +481,26 @@ export default function BudgetSummary({
 
         {/* Dynamic Legend */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
-          {activeBuckets.map((b) => {
-            const linkedParent = PARENT_ALLOCATIONS.find(p => p.id === b.parentAllocation);
-            return (
-              <div 
-                key={b.id}
-                onMouseEnter={() => setHoveredBucketId(b.id)}
-                onMouseLeave={() => setHoveredBucketId(null)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  opacity: hoveredBucketId && hoveredBucketId !== b.id ? 0.45 : 1,
-                  transition: 'opacity 0.2s ease'
-                }}
-              >
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.color, display: 'inline-block' }} />
-                <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {b.name} <span style={{ color: b.color }}>({b.pct}%)</span>
-                  {linkedParent && linkedParent.id !== 'none' && (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
-                      [Linked to {linkedParent.name}]
-                    </span>
-                  )}
-                </span>
-              </div>
-            );
-          })}
+          {activeBuckets.map((b) => (
+            <div 
+              key={b.id}
+              onMouseEnter={() => setHoveredBucketId(b.id)}
+              onMouseLeave={() => setHoveredBucketId(null)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                opacity: hoveredBucketId && hoveredBucketId !== b.id ? 0.45 : 1,
+                transition: 'opacity 0.2s ease'
+              }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.color, display: 'inline-block' }} />
+              <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {b.name} <span style={{ color: b.color }}>({b.pct}%)</span>
+              </span>
+            </div>
+          ))}
         </div>
         
       </div>
@@ -555,7 +513,6 @@ export default function BudgetSummary({
           const pcBucketVal = yBucketVal / periodsPerYr;
 
           const isHovered = hoveredBucketId === b.id;
-          const linkedParent = PARENT_ALLOCATIONS.find(p => p.id === b.parentAllocation);
 
           return (
             <div 
@@ -595,15 +552,9 @@ export default function BudgetSummary({
                   <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {b.name}
                   </h3>
-                  {linkedParent && linkedParent.id !== 'none' ? (
-                    <div style={{ fontSize: '0.725rem', color: b.color, fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Link2 size={12} /> Linked to {linkedParent.name}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.25 }}>
-                      {b.desc || `${b.pct}% allocation cap`}
-                    </p>
-                  )}
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.25 }}>
+                    {b.desc || `${b.pct}% allocation cap`}
+                  </p>
                 </div>
               </div>
 
