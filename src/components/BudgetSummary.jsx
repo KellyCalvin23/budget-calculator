@@ -398,23 +398,30 @@ export default function BudgetSummary({
                       borderRadius: '8px',
                       border: '1px solid var(--border-subtle)'
                     }}>
-                      {PRESET_COLORS.slice(0, Math.min(PRESET_COLORS.length, Math.max(customBuckets.length + 2, 8))).map((c) => (
-                        <span
-                          key={c}
-                          onClick={() => handleUpdateBucketColor(b.id, c)}
-                          title={`Select color ${c}`}
-                          style={{
-                            width: '13px',
-                            height: '13px',
-                            borderRadius: '50%',
-                            background: c,
-                            cursor: 'pointer',
-                            outline: (b.color || '').toLowerCase() === c.toLowerCase() ? '2px solid #fff' : 'none',
-                            boxShadow: (b.color || '').toLowerCase() === c.toLowerCase() ? `0 0 6px ${c}` : 'none',
-                            transition: 'all 0.15s ease'
-                          }}
-                        />
-                      ))}
+                      {(() => {
+                        const visibleCount = Math.min(PRESET_COLORS.length, customBuckets.length + 2);
+                        let swatches = PRESET_COLORS.slice(0, visibleCount);
+                        if (b.color && PRESET_COLORS.includes(b.color) && !swatches.includes(b.color)) {
+                          swatches = [...swatches, b.color];
+                        }
+                        return swatches.map((c) => (
+                          <span
+                            key={c}
+                            onClick={() => handleUpdateBucketColor(b.id, c)}
+                            title={`Select color ${c}`}
+                            style={{
+                              width: '13px',
+                              height: '13px',
+                              borderRadius: '50%',
+                              background: c,
+                              cursor: 'pointer',
+                              outline: (b.color || '').toLowerCase() === c.toLowerCase() ? '2px solid #fff' : 'none',
+                              boxShadow: (b.color || '').toLowerCase() === c.toLowerCase() ? `0 0 6px ${c}` : 'none',
+                              transition: 'all 0.15s ease'
+                            }}
+                          />
+                        ));
+                      })()}
 
                       {/* Custom Color Wheel Picker */}
                       <label title="Pick custom color" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0, position: 'relative' }}>
